@@ -1,14 +1,14 @@
 import React from "react";
 import StyledSvg from "./styled";
-class DrawBoardSvg extends React.Component {
-  render() {
+function DrawBoardSvg(props) {
+ 
     return (
-      <StyledSvg viewBox={this.props.viewBox}>
-        <polyline id="line" points={this.props.points}/>
+      <StyledSvg viewBox={props.viewBox}>
+        {props.children}
         Sorry, your browser does not support inline SVG.
       </StyledSvg>
 
     );
-  }
+  
 }
 export default DrawBoardSvg;

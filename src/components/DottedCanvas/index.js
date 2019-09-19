@@ -111,7 +111,7 @@ class DottedCanvas extends React.Component {
   }
 
   componentDidUpdate(){
-    // prima fase di gioco: disegno della mappa
+    // prima fase di gioco: disegno della mappa;
     if(this.props.gameStage===0){
       this.ctx.fillStyle = this.props.bgColor;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -120,8 +120,13 @@ class DottedCanvas extends React.Component {
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.trackColor;
 
-    }
-    // seconda fase di gioco: disegno griglia e inizio gioco;
+    } 
+    // seconda fase di gioco: disegno griglia e linea di partenza;
+ /*  else if(this.props.gameStage===1){
+      
+
+    }*/
+    // terza fase di gioco: gara;
     else if(this.props.point.length===0 && !this.props.isMoving){
       for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
         for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){

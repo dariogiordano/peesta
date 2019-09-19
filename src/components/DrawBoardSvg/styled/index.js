@@ -8,6 +8,12 @@ polyline{
   fill: rgba(0, 0, 0, 0);
   stroke: rgba(0, 0, 0, 0.5);
   stroke-width: 1;
+}
+
+line{
+  fill: rgba(0, 0, 0, 0);
+  stroke: rgba(0, 255, 0, 0.8);
+  stroke-width: 3;
 }`;
 
 export default styledSvg;
