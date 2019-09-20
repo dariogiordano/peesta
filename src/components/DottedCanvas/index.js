@@ -10,6 +10,7 @@ class DottedCanvas extends React.Component {
     this.handleMouseUp=this.handleMouseUp.bind(this);
     this.handleMouseMove=this.handleMouseMove.bind(this);
     this.onPaint=this.onPaint.bind(this);
+    this.isGoodStartLane=this.isGoodStartLane.bind(this)
     this.down=false;
   }
   handleMouseDown(){
@@ -50,47 +51,45 @@ class DottedCanvas extends React.Component {
     
   }
 
-  isCrash(){
+  getHexesInfo(x,y,direction,gear){
     let hexes=[];
     let points=[];
-    let redPoints=[];
-    let lastGoodPoint=null;
-    for(var i=0; i<=parseInt(this.props.gear);i++){
-      let pointToCheck=this.checkDirection(i);
+    for(var i=0; i<=parseInt(gear);i++){
+      let pointToCheck=this.checkDirection(x,y,direction,i);
       let p = this.ctx.getImageData(pointToCheck[0], pointToCheck[1], 1, 1).data; 
       let hex = "#" + ("000000" + this.rgbToHex(p[0], p[1], p[2])).slice(-6);
       hexes.push(hex);
       points.push(pointToCheck)
-      if(hex!==this.props.trackColor)
-        redPoints.push(pointToCheck);
     }
-    /*
-    /*se trovati piu di due punti fuori pista nel segmento, ma l'ultimo è tornato dentro,
-    siamo in un caso di taglio del percorso, ugualmente considerato come incidente
-   let isCuttingTrack= redPoints.length>2 && hexes[0]===this.props.trackColor;
-   */
-  /**
-   * se il primo punto non è nè pista nè sfondo, vuol dire che sono in una posizione borderline, sul confine sfumato tra pista e bordo.
-   * in questo caso metto l'incidente a false
-   */
-  if(hexes[0]!==this.props.trackColor && hexes[0]!==this.props.bgColor){
-    return {yesItIs:false,lastGoodPoint};
+    return{hexes,points}
   }
-   /*se non trovo mai il colore della pista,
+
+  isCrash(){
+    let hexesInfo=this.getHexesInfo(this.props.point[0],this.props.point[1],this.props.point[2],this.props.gear);
+    let hexes=hexesInfo.hexes;
+    let points=hexesInfo.points;
+    let redPoints=hexes.filter(hex=>hex!==this.props.trackColor);
+    let lastGoodPoint=null;
+    /**
+     * se il primo punto non è nè pista nè sfondo, vuol dire che sono in una posizione borderline, sul confine sfumato tra pista e bordo.
+     * in questo caso metto l'incidente a false
+     */
+    if(hexes[0]!==this.props.trackColor && hexes[0]!==this.props.bgColor){
+      return {yesItIs:false,lastGoodPoint};
+    }
+    /*se non trovo mai il colore della pista,
     vuol dire che sto partendo dallo sfondo verso lo sfondo.
     quindi non valorizzo il punto di ripartenza per bloccare la mossa */
     else if(hexes.indexOf(this.props.trackColor)!==-1)
-   
       lastGoodPoint=points[hexes.lastIndexOf(this.props.bgColor)];
-    return {yesItIs:this.props.gear>0 && (redPoints.length>2 || hexes[0]!==this.props.trackColor),lastGoodPoint};
+    return {yesItIs:this.props.gear>0 && (redPoints.length>2 || hexes[0]!==this.props.trackColor  || hexes[0]===this.props.incidentColor),lastGoodPoint};
   }
 
-  checkDirection(i){
-    let direction=this.props.point[2];
+  checkDirection(x,y,direction,i){
     var newX;
     var newY;
-    let x=parseInt(this.props.point[0]);
-    let y=parseInt(this.props.point[1]);
+    x=parseInt(x);
+    y=parseInt(y);
     if(1>0){
       let size=parseInt(this.props.cellSize*i)
       switch(direction){
@@ -115,23 +114,39 @@ class DottedCanvas extends React.Component {
     }
      return [newX,newY];
   }
+  isGoodStartLane(){
+    /**
+     * per determinare se la start lane è buona ho bisogno che l'oggetto startLaneInfo abbia le seguenti info:
+     * punto finale (x,y)
+     * direzione (stringa)
+     * gear (lunghezza della linea in numero di punti toccati)
+     * 
+    */
+   let lane=this.props.startLaneInfo;
+   let hexes=this.getHexesInfo(lane[0],lane[1],lane[2],lane[3]).hexes;
+  
+   
+    
+
+    return hexes[0]!==this.props.trackColor && hexes[hexes.length-1]!==this.props.trackColor&&hexes.indexOf(this.props.trackColor)>=0;
+  }
 
   componentDidUpdate(){
     // prima fase di gioco: disegno della mappa;
     if(this.props.gameStage===0){
       this.ctx.fillStyle = this.props.bgColor;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.lineWidth = this.props.cellSize*3;
+      this.ctx.lineWidth = this.props.cellSize*2;
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.trackColor;
 
     } 
-    // seconda fase di gioco: disegno griglia e linea di partenza;
- /*  else if(this.props.gameStage===1){
-      
-
-    }*/
+    // seconda fase di gioco: disegno della griglia e della linea di partenza;
+    else if(this.props.gameStage===1 && this.props.isMoving && this.props.startLaneInfo!==null){
+    
+      this.props.onStartLaneInfoChange(this.isGoodStartLane());
+    }
     // terza fase di gioco: gara;
     else if(this.props.point.length===0 && !this.props.isMoving){
       for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
