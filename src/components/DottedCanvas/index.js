@@ -69,11 +69,17 @@ class DottedCanvas extends React.Component {
     siamo in un caso di taglio del percorso, ugualmente considerato come incidente
    let isCuttingTrack= redPoints.length>2 && hexes[0]===this.props.trackColor;
    */
-
+  /**
+   * se il primo punto non è nè pista nè sfondo, vuol dire che sono in una posizione borderline, sul confine sfumato tra pista e bordo.
+   * in questo caso metto l'incidente a false
+   */
+  if(hexes[0]!==this.props.trackColor && hexes[0]!==this.props.bgColor){
+    return {yesItIs:false,lastGoodPoint};
+  }
    /*se non trovo mai il colore della pista,
     vuol dire che sto partendo dallo sfondo verso lo sfondo.
     quindi non valorizzo il punto di ripartenza per bloccare la mossa */
-    if(hexes.indexOf(this.props.trackColor)!==-1)
+    else if(hexes.indexOf(this.props.trackColor)!==-1)
    
       lastGoodPoint=points[hexes.lastIndexOf(this.props.bgColor)];
     return {yesItIs:this.props.gear>0 && (redPoints.length>2 || hexes[0]!==this.props.trackColor),lastGoodPoint};
@@ -141,7 +147,7 @@ class DottedCanvas extends React.Component {
         if(isCrash.lastGoodPoint)
         {
           this.ctx.beginPath();
-          this.ctx.fillStyle = "rgba(255,0,0,1)";
+          this.ctx.fillStyle = this.props.incidentColor;
           this.ctx.arc(isCrash.lastGoodPoint[0],isCrash.lastGoodPoint[1], 4, 0, 2 * Math.PI);
           this.ctx.stroke();
           this.ctx.fill();

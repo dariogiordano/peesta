@@ -11,6 +11,7 @@ class Grid extends React.Component {
     this.gearMax=6;
     this.cellSize=20;
     this.trackColor="#ffffee"
+    this.incidentColor="#cc0000"
     this.bgColor="#bbefef"
     
     /*init*/
@@ -205,7 +206,8 @@ class Grid extends React.Component {
   }
 
   isProperStartLane(){
-return true;
+    //TODO!!! verificare che la linea di partenza sia tracciata bene
+    return true;
   }
 
   handleMove(event){
@@ -277,7 +279,8 @@ return true;
           <DottedCanvas
             gameStage={this.state.gameStage}
             trackColor={this.trackColor}
-            bgColor={this.bgColor}  
+            bgColor={this.bgColor}
+            incidentColor={this.incidentColor}
             onCrash={this.onCrash}
             cellSize={this.cellSize}
             gear={this.state.gear}
