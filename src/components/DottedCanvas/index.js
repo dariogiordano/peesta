@@ -10,7 +10,7 @@ class DottedCanvas extends React.Component {
     this.handleMouseUp=this.handleMouseUp.bind(this);
     this.handleMouseMove=this.handleMouseMove.bind(this);
     this.onPaint=this.onPaint.bind(this);
-    this.isGoodStartLane=this.isGoodStartLane.bind(this)
+    this.getValidStartLaneData=this.getValidStartLaneData.bind(this)
     this.down=false;
   }
   handleMouseDown(){
@@ -114,21 +114,21 @@ class DottedCanvas extends React.Component {
     }
      return [newX,newY];
   }
-  isGoodStartLane(){
-    /**
+  
+  /**
      * per determinare se la start lane è buona ho bisogno che l'oggetto startLaneInfo abbia le seguenti info:
      * punto finale (x,y)
      * direzione (stringa)
      * gear (lunghezza della linea in numero di punti toccati)
      * 
     */
-   let lane=this.props.startLaneInfo;
-   let hexes=this.getHexesInfo(lane[0],lane[1],lane[2],lane[3]).hexes;
-  
-   
-    
-
-    return hexes[0]!==this.props.trackColor && hexes[hexes.length-1]!==this.props.trackColor&&hexes.indexOf(this.props.trackColor)>=0;
+  getValidStartLaneData(){
+    let lane=this.props.startLaneInfo;
+    let data=this.getHexesInfo(lane[0],lane[1],lane[2],lane[3])
+    let hexes=data.hexes;
+    if(hexes[0]!==this.props.trackColor && hexes[hexes.length-1]!==this.props.trackColor&&hexes.indexOf(this.props.trackColor)>=0)
+      return data;
+    else return false;
   }
 
   componentDidUpdate(){
@@ -140,12 +140,19 @@ class DottedCanvas extends React.Component {
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.trackColor;
-
     } 
     // seconda fase di gioco: disegno della griglia e della linea di partenza;
     else if(this.props.gameStage===1 && this.props.isMoving && this.props.startLaneInfo!==null){
-    
-      this.props.onStartLaneInfoChange(this.isGoodStartLane());
+     
+      this.props.onStartLaneDataSet(this.getValidStartLaneData());
+    }
+    // terza fase di gioco: posizione iniziale macchina;
+    else if(this.props.gameStage===2 && this.props.point.length>0){
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = "rgba(50,50,250,0.7)";
+      this.ctx.arc(this.props.point[0],this.props.point[1], 4, 0, 2 * Math.PI);
+      this.ctx.stroke();
     }
     // terza fase di gioco: gara;
     else if(this.props.point.length===0 && !this.props.isMoving){

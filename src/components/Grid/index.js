@@ -34,7 +34,7 @@ class Grid extends React.Component {
     this.onCrash = this.onCrash.bind(this);
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
-    this.onStartLaneInfoChange=this.onStartLaneInfoChange.bind(this);
+    this.onStartLaneDataSet=this.onStartLaneDataSet.bind(this);
   }
 
   isUTurn(lastDirection){
@@ -211,12 +211,13 @@ class Grid extends React.Component {
     return {points,direction};
   }
 
-  onStartLaneInfoChange(isGoodLane){
-    if (isGoodLane)
-    this.setState(state=>({
-      isMoving:false
-    }));
-    else{
+  onStartLaneDataSet(startLaneData){
+    if (typeof startLaneData === 'object'){
+      this.startLaneData=startLaneData;
+      this.setState(state=>({
+        isMoving:false
+      }));
+    }else{
       this.setState(state=>({
         startLane:{x1:0,x2:0,y1:0,y2:0},
         startLaneInfo:null,
@@ -239,6 +240,7 @@ class Grid extends React.Component {
           startLane
         }));
       }else if(this.state.gameStage===2){
+      }else if(this.state.gameStage===3){
         this.setState(state=>({
           points:this.getMoveDetails(x,y).points
         }));
@@ -249,6 +251,7 @@ class Grid extends React.Component {
   handleClick(event){
     var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize; 
     var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
+    //disegno della start lane
     if(this.state.gameStage===1){
       if(!this.state.isMoving){
         this.lastPoint=[x,y];
@@ -258,13 +261,23 @@ class Grid extends React.Component {
           isMoving:true
         }));
       }else {
+        //mando al canvas le info sulla start lane per ricevere indietro i dati relativi al colore e ai punti (dentro il callback onStartLaneDataSet)
         let  pointAndDir=this.getPointAndDir(this.state.startLane.x1,x,this.state.startLane.y1,y);;
         var startLaneInfo=[pointAndDir.newX,pointAndDir.newY,pointAndDir.direction,this.getGear(pointAndDir.newX,pointAndDir.newY,this.state.startLane.x1,this.state.startLane.y1)];
         this.setState(state=>({
           startLaneInfo
         }));
       }
+      //segno il punto di partenza sulla linea di partenza
     }else if(this.state.gameStage===2){
+
+      var i =this.startLaneData.points.findIndex(e=>e[0]===x&&e[1]===y);
+      if(i>=0 && this.startLaneData.hexes[i]===this.trackColor && this.state.points.length===0)
+      this.setState(state=>({
+        points:[x+","+y,x+","+y],
+        drawPoint:[x,y]
+      }));
+    }else if(this.state.gameStage===3){
       if(!this.state.isMoving){
         this.lastPoint=[x,y];
         this.setState(state=>({
@@ -307,10 +320,10 @@ class Grid extends React.Component {
             width={this.state.dimensions[0]}
             height={this.state.dimensions[1]}
             startLaneInfo={this.state.startLaneInfo}
-            onStartLaneInfoChange={this.onStartLaneInfoChange}
+            onStartLaneDataSet={this.onStartLaneDataSet}
           />
           {this.state.gameStage>0 &&<DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}><polyline id="line" points={this.state.points}/><line x1={this.state.startLane.x1} y1={this.state.startLane.y1} x2={this.state.startLane.x2} y2={this.state.startLane.y2} /></DrawBoardSvg>}
-          {this.state.gameStage<2 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
+          {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
         </div>
       </StyledGrid>
     );
