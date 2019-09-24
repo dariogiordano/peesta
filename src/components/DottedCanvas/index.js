@@ -173,30 +173,24 @@ class DottedCanvas extends React.Component {
         });
         return row
       });
-      var searchForTwo=function(row,indexV,indexH,dir){
-        var newI;
-        if(dir==="E" && indexH>0)
-          newI=indexH-1;
-        else if(dir==="O" && indexH<row.length-1)
-          newI=indexH+1;
-        if(row[newI]===2){
-          console.log(grid[indexV][newI]);
-          grid[indexV][newI]=0;
-          console.log(grid[indexV][newI]);
-          return searchForTwo(row,newI,dir);
-        }
-      }
-      grid.forEach((row,indexV)=>{
+    
+      //elimino eventuali 2 lasciati nei sottoscuadra
+      grid.forEach((row)=>{
         row.forEach((cell,indexH)=>{
           if(cell===2){
             if (indexH>0 && row[indexH-1]===0){
-              console.log("O");
-              searchForTwo(row,indexV,indexH,"O");
+              for (let e=indexH; e>0; e--){
+                if (row[e]===2) row.splice(e,1,0);
+                else break;
+              }
             }
             if (indexH<row.length-1 && row[indexH+1]===0){
-              console.log("E");
-              searchForTwo(row,indexV,indexH,"E");}
-           
+             
+              for (let o=indexH; o<=row.length-1; o++){
+                if (row[o]===2)  row.splice(o,1,0); 
+                else break;
+              }
+            }
           } 
         });
       });
