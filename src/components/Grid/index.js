@@ -1,5 +1,6 @@
 import React from "react";
 import Button from "components/Button";
+import Loader from "components/Loader";
 import DrawBoardSvg from "components/DrawBoardSvg";
 import DottedCanvas from "components/DottedCanvas";
 import StyledGrid from "./styled";
@@ -17,8 +18,10 @@ class Grid extends React.Component {
     /*init*/
     this.state = {
       isMoving:false,
-      startLane:{x1:0,x2:0,y1:0,y2:0},
-      startLaneInfo:null,
+      startLaneStart:{x:0,y:0},
+      startLaneEnd:{x1:0,y1:0,x2:0,y7:0},
+      grid:[],
+      loading:false,
       points:[],
       drawPoint:[],
       dimensions:[100,100],
@@ -34,7 +37,9 @@ class Grid extends React.Component {
     this.onCrash = this.onCrash.bind(this);
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
-    this.onStartLaneDataSet=this.onStartLaneDataSet.bind(this);
+    this.onGridSet=this.onGridSet.bind(this);
+    this.getStartLane=this.getStartLane.bind(this);
+    this.checkDirection=this.checkDirection.bind(this);
   }
 
   isUTurn(lastDirection){
@@ -88,8 +93,9 @@ class Grid extends React.Component {
   }
 
   onChangeGameStage(){
-    let gameStage=this.state.gameStage+1
+    let gameStage=this.state.gameStage+1;
     this.setState(state=>({
+      loading:gameStage===1,
       gameStage
     }));
   }
@@ -226,20 +232,110 @@ class Grid extends React.Component {
     }
   }
 
+  onGridSet(grid){
+      this.setState(state=>({
+        loading:false,
+        gameStage:2,
+        grid,
+        isMoving:false
+      }));
+  }
+
+  getOppositeDirection(dir){
+    switch(dir){
+      case "O": return "E";
+      case "NO": return "SE";
+      case "N": return "S";
+      case "NE": return "SO";
+      case "E": return "O";
+      case "SE": return "NO";
+      case "S": return "N";
+      case "SO": return "NE";
+      default: return dir;
+    }
+  }
+  
+  getStartLane(direction){
+
+    var i=1,o=1,x=this.state.startLaneStart.x,y=this.state.startLaneStart.y;
+    var directionCohords=this.recursiveIsTrack(x,y,direction,i)
+    var oppositeDirection=this.getOppositeDirection(direction);
+    var oppositeDirectionCohords=this.recursiveIsTrack(x,y,oppositeDirection,o);
+
+   return{
+       x1:directionCohords[0],
+       x2:oppositeDirectionCohords[0],
+       y1:directionCohords[1],
+       y2:oppositeDirectionCohords[1]
+      }
+   
+  }
+
+  recursiveIsTrack(xStart,yStart,direction,i){
+    var p = this.checkDirection(xStart,yStart,direction,i);
+    if(this.state.grid[((p[1]-this.cellSize)/this.cellSize)][(p[0]-this.cellSize)/this.cellSize]===0){
+      return [p[0],p[1]];
+    }else{
+      i++
+      return this.recursiveIsTrack(xStart,yStart,direction,i)
+    }
+  }
+
+  getValidStartLaneData(x,y,direction,gear){
+    let points=this.getHexesInfo(x,y,direction,gear) 
+    if(this.state.grid[points[0][0]][points[0][1]] )
+      // && hexes[hexes.length-1]!==this.props.trackColor&&hexes.indexOf(this.props.trackColor)>=0)
+      return points;
+    else return false;
+  }
+
+  getHexesInfo(x,y,direction,gear){
+    let points=[];
+    for(var i=0; i<=parseInt(gear);i++){
+      points.push(this.checkDirection(x,y,direction,i))
+    }
+    return points
+  }
+
+  checkDirection(x,y,direction,i){
+    var newX;
+    var newY;
+    x=parseInt(x);
+    y=parseInt(y);
+    let size=parseInt(this.cellSize*i)
+    switch(direction){
+      case "O": newX=x-size;newY=y; 
+      break;
+      case "NO": newX=x-size;newY=y+size;
+      break;
+      case "N":  newX=x;newY=y+size;
+      break;
+      case "NE":  newX=x+size;newY=y+size;
+      break;
+      case "E":  newX=x+size;newY=y;
+      break;
+      case "SE":  newX=x+size;newY=y-size;
+      break;
+      case "S":  newX=x;newY=y-size;
+      break;
+      case "SO":  newX=x-size;newY=y-size;
+      break;
+      default:  newX=x;newY=y;
+    }
+    return [newX,newY];
+  }
+
   handleMove(event){
     var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
     var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     if(this.state.isMoving && this.state.points[this.state.points.length-1]!==x+","+y && !(event.clientX>=this.lastPoint[0]-(this.cellSize/2) && event.clientX<this.lastPoint[0]+(this.cellSize/2) && event.clientY>=this.lastPoint[1]-(this.cellSize/2) && event.clientY<this.lastPoint[1]+(this.cellSize/2))){
       this.lastPoint=[x,y];  
-      if(this.state.gameStage===1){
-        var pointAndDir=this.getPointAndDir(this.state.startLane.x1,x,this.state.startLane.y1,y);
-        let startLane={...this.state.startLane};
-        startLane.x2=pointAndDir.newX;
-        startLane.y2=pointAndDir.newY;
+      if(this.state.gameStage===2){
+        
+        var pointAndDir=this.getPointAndDir(this.state.startLaneStart.x,x,this.state.startLaneStart.y,y);
         this.setState(state=>({
-          startLane
+          startLaneEnd:this.getStartLane(pointAndDir.direction)
         }));
-      }else if(this.state.gameStage===2){
       }else if(this.state.gameStage===3){
         this.setState(state=>({
           points:this.getMoveDetails(x,y).points
@@ -248,28 +344,34 @@ class Grid extends React.Component {
     }
   }
 
+ 
+
   handleClick(event){
     var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize; 
     var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     //disegno della start lane
-    if(this.state.gameStage===1){
+    if(this.state.gameStage===2){
       if(!this.state.isMoving){
         this.lastPoint=[x,y];
         this.setState(state=>({
-          startLaneInfo:null,
-          startLane:{x1:x,x2:x,y1:y,y2:y},
+          startLaneStart:{x,y},
           isMoving:true
         }));
       }else {
         //mando al canvas le info sulla start lane per ricevere indietro i dati relativi al colore e ai punti (dentro il callback onStartLaneDataSet)
-        let  pointAndDir=this.getPointAndDir(this.state.startLane.x1,x,this.state.startLane.y1,y);;
-        var startLaneInfo=[pointAndDir.newX,pointAndDir.newY,pointAndDir.direction,this.getGear(pointAndDir.newX,pointAndDir.newY,this.state.startLane.x1,this.state.startLane.y1)];
-        this.setState(state=>({
-          startLaneInfo
-        }));
+       /* let  pointAndDir=this.getPointAndDir(this.state.startLane.x1,x,this.state.startLane.y1,y);
+       
+          let xx=pointAndDir.newX,
+          yy=pointAndDir.newY,
+          direction=pointAndDir.direction,
+          gear=this.getGear(pointAndDir.newX,pointAndDir.newY,this.state.startLane.x1,this.state.startLane.y1);
+
+
+        this.onStartLaneDataSet(this.getValidStartLaneData(xx,yy,direction,gear).bind(this)).bind(this);*/
+        
       }
       //segno il punto di partenza sulla linea di partenza
-    }else if(this.state.gameStage===2){
+    }else if(this.state.gameStage===3){
 
       var i =this.startLaneData.points.findIndex(e=>e[0]===x&&e[1]===y);
       if(i>=0 && this.startLaneData.hexes[i]===this.trackColor && this.state.points.length===0)
@@ -305,27 +407,31 @@ class Grid extends React.Component {
 
   render() {
     return (
-      <StyledGrid onClick={this.handleClick} onMouseMove={this.handleMove}>  
-        <div>
-          <DottedCanvas
-            gameStage={this.state.gameStage}
-            trackColor={this.trackColor}
-            bgColor={this.bgColor}
-            incidentColor={this.incidentColor}
-            onCrash={this.onCrash}
-            cellSize={this.cellSize}
-            gear={this.state.gear}
-            isMoving={this.state.isMoving}
-            point={this.state.drawPoint}
-            width={this.state.dimensions[0]}
-            height={this.state.dimensions[1]}
-            startLaneInfo={this.state.startLaneInfo}
-            onStartLaneDataSet={this.onStartLaneDataSet}
-          />
-          {this.state.gameStage>0 &&<DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}><polyline id="line" points={this.state.points}/><line x1={this.state.startLane.x1} y1={this.state.startLane.y1} x2={this.state.startLane.x2} y2={this.state.startLane.y2} /></DrawBoardSvg>}
-          {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
+      <div> <Loader isLoading={this.state.loading}></Loader>
+        <StyledGrid onClick={this.handleClick} onMouseMove={this.handleMove}>  
+          <div>
+           
+            <DottedCanvas
+              gameStage={this.state.gameStage}
+              trackColor={this.trackColor}
+              bgColor={this.bgColor}
+              incidentColor={this.incidentColor}
+              onCrash={this.onCrash}
+              cellSize={this.cellSize}
+              gear={this.state.gear}
+              isMoving={this.state.isMoving}
+              point={this.state.drawPoint}
+              width={this.state.dimensions[0]}
+              height={this.state.dimensions[1]}
+              onGridSet={this.onGridSet}
+            />
+            {this.state.gameStage>0 &&<DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}><polyline id="line" points={this.state.points}/><line x1={this.state.startLaneEnd.x1} y1={this.state.startLaneEnd.y1} x2={this.state.startLaneEnd.x2} y2={this.state.startLaneEnd.y2} /></DrawBoardSvg>}
+            {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
+          
+          </div>
+        </StyledGrid>
+      
         </div>
-      </StyledGrid>
     );
   }
 }

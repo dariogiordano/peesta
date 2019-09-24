@@ -10,7 +10,7 @@ class DottedCanvas extends React.Component {
     this.handleMouseUp=this.handleMouseUp.bind(this);
     this.handleMouseMove=this.handleMouseMove.bind(this);
     this.onPaint=this.onPaint.bind(this);
-    this.getValidStartLaneData=this.getValidStartLaneData.bind(this)
+    this.getGrid=this.getGrid.bind(this)
     this.down=false;
   }
   handleMouseDown(){
@@ -131,23 +131,111 @@ class DottedCanvas extends React.Component {
     else return false;
   }
 
+  getGrid(){
+    return new Promise((resolve, reject) => {
+      let grid=[];
+      for(var y=this.props.cellSize;y<=this.props.height-this.props.cellSize; y+=this.props.cellSize){
+        let row=[];
+        for(var x=this.props.cellSize;x<= this.props.width-this.props.cellSize;x+=this.props.cellSize){
+          let p = this.ctx.getImageData(x, y, 1, 1).data; 
+          let hex = "#" + ("000000" + this.rgbToHex(p[0], p[1], p[2])).slice(-6);
+          row.push(hex!==this.props.bgColor?1:0);
+        }
+        grid.push(row);
+      }
+
+      grid=grid.map((row,indexV)=>{
+        row=row.map((cell,indexH)=>{
+          if(cell===0){
+            var counterN=0;
+            var counterS=0;
+            var counterE=0;
+            var counterO=0;
+            for (let n=0; n<indexV; n++){
+              if (grid[n][indexH]===1) counterN++;
+            }
+            for (let s=indexV; s<=grid.length-1; s++){
+              if (grid[s][indexH]===1) counterS++;
+            }
+            for (let e=0; e<=indexH; e++){
+              if (row[e]===1) counterE++;
+            }
+            for (let o=indexH; o<=row.length-1; o++){
+              if (row[o]===1) counterO++;
+            }
+           
+            if(counterN>0 && counterS>0 && counterE>0 && counterO>0 ){
+              
+              return 2;
+            }
+          }
+          return cell;
+        });
+        return row
+      });
+      var searchForTwo=function(row,indexV,indexH,dir){
+        var newI;
+        if(dir==="E" && indexH>0)
+          newI=indexH-1;
+        else if(dir==="O" && indexH<row.length-1)
+          newI=indexH+1;
+        if(row[newI]===2){
+          console.log(grid[indexV][newI]);
+          grid[indexV][newI]=0;
+          console.log(grid[indexV][newI]);
+          return searchForTwo(row,newI,dir);
+        }
+      }
+      grid.forEach((row,indexV)=>{
+        row.forEach((cell,indexH)=>{
+          if(cell===2){
+            if (indexH>0 && row[indexH-1]===0){
+              console.log("O");
+              searchForTwo(row,indexV,indexH,"O");
+            }
+            if (indexH<row.length-1 && row[indexH+1]===0){
+              console.log("E");
+              searchForTwo(row,indexV,indexH,"E");}
+           
+          } 
+        });
+      });
+      resolve(grid)
+    });
+  }
+
+
   componentDidUpdate(){
     // prima fase di gioco: disegno della mappa;
     if(this.props.gameStage===0){
       this.ctx.fillStyle = this.props.bgColor;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.lineWidth = this.props.cellSize*2;
+      this.ctx.lineWidth = this.props.cellSize*3;
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.trackColor;
     } 
     // seconda fase di gioco: disegno della griglia e della linea di partenza;
-    else if(this.props.gameStage===1 && this.props.isMoving && this.props.startLaneInfo!==null){
+    else if(this.props.gameStage===1 ){
+      setTimeout(function(){
+    let gridPromise=this.getGrid();
+     gridPromise.then(function(result){
+       console.log(result);
+       for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
+        for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
+          this.ctx.fillStyle = "#333333";
+          this.ctx.fillRect(w-1,h-1,1,1);
+        }
+      }
+      this.props.onGridSet(result);
+     }.bind(this));
      
-      this.props.onStartLaneDataSet(this.getValidStartLaneData());
+    }.bind(this));
     }
+
+
     // terza fase di gioco: posizione iniziale macchina;
-    else if(this.props.gameStage===2 && this.props.point.length>0){
+    else if(this.props.gameStage===3 && this.props.point.length>0){
       this.ctx.lineWidth = 1;
       this.ctx.beginPath();
       this.ctx.strokeStyle = "rgba(50,50,250,0.7)";
@@ -156,12 +244,7 @@ class DottedCanvas extends React.Component {
     }
     // terza fase di gioco: gara;
     else if(this.props.point.length===0 && !this.props.isMoving){
-      for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
-        for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
-          this.ctx.fillStyle = "#333333";
-          this.ctx.fillRect(w-1,h-1,1,1);
-        }
-      }
+ 
     }else if(!this.props.isMoving){
       this.ctx.lineWidth = 1;
       var isCrash=this.isCrash();
@@ -186,7 +269,7 @@ class DottedCanvas extends React.Component {
 
   render() {
     return (
-      <StyledCanvas>
+      <StyledCanvas cursorSize={this.props.cellSize*3}>
         <canvas ref={this.canvasRef} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} onMouseMove={this.handleMouseMove} width={this.props.width} height={this.props.height} >
           Your browser does not support the canvas element.
         </canvas>
