@@ -10,7 +10,8 @@ class DottedCanvas extends React.Component {
     this.handleMouseUp=this.handleMouseUp.bind(this);
     this.handleMouseMove=this.handleMouseMove.bind(this);
     this.onPaint=this.onPaint.bind(this);
-    this.getGrid=this.getGrid.bind(this)
+    this.getGrid=this.getGrid.bind(this);
+    this.recursiveCleanGrid=this.recursiveCleanGrid.bind(this);
     this.down=false;
   }
   handleMouseDown(){
@@ -131,6 +132,52 @@ class DottedCanvas extends React.Component {
     else return false;
   }
 
+  recursiveCleanGrid(grid){
+    var needOneMore=false;
+    grid.forEach((row,indexV)=>{
+      row.forEach((cell,indexH)=>{
+        if(cell===2){
+          //ovest
+          if (indexH>0 && row[indexH-1]===0){
+            needOneMore=true;
+            for (let o=indexH; o<=row.length-1; o++){
+              if (row[o]===2) row.splice(o,1,0);
+              else break;
+            }
+          }
+          //est
+          if (indexH<row.length-1 && row[indexH+1]===0){
+            needOneMore=true;
+            for (let e=indexH; e>0; e--){       
+              if (row[e]===2)  row.splice(e,1,0); 
+              else break;
+            }
+          }
+          //sud
+          if (indexV>0 && grid[indexV-1][indexH]===0){
+            needOneMore=true;
+            for (let s=indexV; s<=grid.length-1; s++){
+              if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
+              else break;
+            }
+          }
+          //nord
+          if (indexV<grid.length-1 && grid[indexV+1][indexH]===0){
+            needOneMore=true;
+            for (let n=indexV; n>0; n--){       
+              if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
+              else break;
+            }
+          }
+        } 
+      });
+    });
+    console.log(needOneMore);
+    if (needOneMore===true)
+    return this.recursiveCleanGrid(grid);
+    else return grid;
+  }
+
   getGrid(){
     return new Promise((resolve, reject) => {
       let grid=[];
@@ -175,393 +222,8 @@ class DottedCanvas extends React.Component {
       });
     
       //elimino eventuali 2 lasciati nei sottosquadra
-      grid.forEach((row,indexV)=>{
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //ovest
-            if (indexH>0 && row[indexH-1]===0)     
-              for (let o=indexH; o<=row.length-1; o++){
-                if (row[o]===2) row.splice(o,1,0);
-                else break;
-              }
-              //est
-            if (indexH<row.length-1 && row[indexH+1]===0) 
-              for (let e=indexH; e>0; e--){       
-                if (row[e]===2)  row.splice(e,1,0); 
-                else break;
-              }
-          } 
-        });
-        row.forEach((cell,indexH)=>{
-          if(cell===2){
-            //sud
-            if (indexV>0 && grid[indexV-1][indexH]===0)
-              for (let s=indexV; s<=grid.length-1; s++){
-                if (grid[s][indexH]===2) grid[s].splice(indexH,1,0);
-                else break;
-              }
-            //nord
-            if (indexV<grid.length-1 && grid[indexV+1][indexH]===0)
-              for (let n=indexV; n>0; n--){       
-                if (grid[n][indexH]===2) grid[n].splice(indexH,1,0); 
-                else break;
-              }
-          } 
-        });
-      });
       
+      grid=this.recursiveCleanGrid(grid);
       resolve(grid)
     });
   }
