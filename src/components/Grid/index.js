@@ -273,7 +273,8 @@ class Grid extends React.Component {
 
   recursiveIsTrack(xStart,yStart,direction,i){
     var p = this.checkDirection(xStart,yStart,direction,i);
-    if(this.state.grid[((p[1]-this.cellSize)/this.cellSize)][(p[0]-this.cellSize)/this.cellSize]===0){
+    var pValue=this.state.grid[((p[1]-this.cellSize)/this.cellSize)][(p[0]-this.cellSize)/this.cellSize];
+    if(pValue===0||pValue===2){
       return [p[0],p[1]];
     }else{
       i++
