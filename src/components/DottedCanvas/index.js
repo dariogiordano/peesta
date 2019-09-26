@@ -116,22 +116,6 @@ class DottedCanvas extends React.Component {
      return [newX,newY];
   }
   
-  /**
-     * per determinare se la start lane è buona ho bisogno che l'oggetto startLaneInfo abbia le seguenti info:
-     * punto finale (x,y)
-     * direzione (stringa)
-     * gear (lunghezza della linea in numero di punti toccati)
-     * 
-    */
-  getValidStartLaneData(){
-    let lane=this.props.startLaneInfo;
-    let data=this.getHexesInfo(lane[0],lane[1],lane[2],lane[3])
-    let hexes=data.hexes;
-    if(hexes[0]!==this.props.trackColor && hexes[hexes.length-1]!==this.props.trackColor&&hexes.indexOf(this.props.trackColor)>=0)
-      return data;
-    else return false;
-  }
-
   recursiveCleanGrid(grid){
     var needOneMore=false;
     grid.forEach((row,indexV)=>{
@@ -172,7 +156,6 @@ class DottedCanvas extends React.Component {
         } 
       });
     });
-    console.log(needOneMore);
     if (needOneMore===true)
     return this.recursiveCleanGrid(grid);
     else return grid;
@@ -242,34 +225,20 @@ class DottedCanvas extends React.Component {
     // seconda fase di gioco: disegno della griglia e della linea di partenza;
     else if(this.props.gameStage===1 ){
       setTimeout(function(){
-    let gridPromise=this.getGrid();
-     gridPromise.then(function(result){
-       console.log(result);
-       for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
-        for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
-          this.ctx.fillStyle = "#333333";
-          this.ctx.fillRect(w-1,h-1,1,1);
-        }
-      }
-      this.props.onGridSet(result);
-     }.bind(this));
-     
-    }.bind(this));
-    }
-
-
-    // terza fase di gioco: posizione iniziale macchina;
-    else if(this.props.gameStage===3 && this.props.point.length>0){
-      this.ctx.lineWidth = 1;
-      this.ctx.beginPath();
-      this.ctx.strokeStyle = "rgba(50,50,250,0.7)";
-      this.ctx.arc(this.props.point[0],this.props.point[1], 4, 0, 2 * Math.PI);
-      this.ctx.stroke();
+        let gridPromise=this.getGrid();
+        gridPromise.then(function(result){
+          for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
+            for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
+              this.ctx.fillStyle = "#333333";
+              this.ctx.fillRect(w-1,h-1,1,1);
+            }
+          }
+          this.props.onGridSet(result);
+        }.bind(this));
+      }.bind(this));
     }
     // terza fase di gioco: gara;
-    else if(this.props.point.length===0 && !this.props.isMoving){
- 
-    }else if(!this.props.isMoving){
+   else if(this.props.gameStage===3 && this.props.point.length>0 && !this.props.isMoving){
       this.ctx.lineWidth = 1;
       var isCrash=this.isCrash();
       if(isCrash.yesItIs){

@@ -39,10 +39,12 @@ class Grid extends React.Component {
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
     this.getStartLane=this.getStartLane.bind(this);
-    this.checkDirection=this.checkDirection.bind(this);
+    this.getNewPointFromGear=this.getNewPointFromGear.bind(this);
     this.getGridValue=this.getGridValue.bind(this);
     this.getIsValidStartLane=this.getIsValidStartLane.bind(this);
     this.getPointsOfSegment=this.getPointsOfSegment.bind(this);
+    this.getGridValuesOfSegment=this.getGridValuesOfSegment.bind(this);
+    this.getCrashInfo=this.getCrashInfo.bind(this);
   }
 
   isUTurn(lastDirection){
@@ -71,37 +73,19 @@ class Grid extends React.Component {
   getPointsOfSegment(x,y,direction,gear){
     let points=[];
     for(var i=0; i<=parseInt(gear);i++){
-      let pointToCheck=this.checkDirection(x,y,direction,i);
-      points.push(pointToCheck)
+      let pointToCheck=this.getNewPointFromGear(x,y,direction,i);
+      points.push(pointToCheck[0]+","+pointToCheck[1])
     }
     return points
   }
 
-  onCrash(point){
-    // se c'è un punto di ripartenza definito, allora siamo in incidente appena commesso
-    if(point){
-      let points=[...this.state.points];
-      //tolgo gli ultimi due
-      if(points.length>1 )
-        points=points.filter((x,i)=>i<points.length-2);
-      //aggiungo il punto di ripartenza passato dal canvas (due volte, per il workaround della preview, che toglie l'ultimo sull'onMove)
-      points.push(point[0]+","+point[1],point[0]+","+point[1]);
-      this.setState(state=>({
-        gear:0,
-        points
-      }));
-     
-    }
-    // altrimenti siamo in stato incidente dopo una ripartenza da un altro incidente, quindi solamente annullo la mossa
-    else{
-      let points=[...this.state.points];
-      points=points.filter((x,i)=>i<points.length-1);
-      this.setState(state=>({
-        points,
-        gear:0,
-        isMoving:true
-      }));
-    }
+  getGridValuesOfSegment(x,y,direction,gear){
+    let points=this.getPointsOfSegment(x,y,direction,gear);
+    points=points.map(point=>{
+      var pointArr=point.split(",");
+      return this.getGridValue(pointArr[0],pointArr[1]);
+    });
+    return points
   }
 
   onChangeGameStage(){
@@ -266,7 +250,7 @@ class Grid extends React.Component {
   }
 
   recursiveIsTrack(xStart,yStart,direction,i){
-    var p = this.checkDirection(xStart,yStart,direction,i);
+    var p = this.getNewPointFromGear(xStart,yStart,direction,i);
     var pValue=this.state.grid[((p[1]-this.cellSize)/this.cellSize)][(p[0]-this.cellSize)/this.cellSize];
     if(pValue===0||pValue===2){
       return [p[0],p[1]];
@@ -281,7 +265,7 @@ class Grid extends React.Component {
     return valuesArray.indexOf(0)>=0&&valuesArray.indexOf(2)>=0
   }
 
-  checkDirection(x,y,direction,i){
+  getNewPointFromGear(x,y,direction,i){
     var newX;
     var newY;
     x=parseInt(x);
@@ -311,6 +295,56 @@ class Grid extends React.Component {
   
   getGridValue(x,y){
     return this.state.grid[Math.round(y/this.cellSize)-1][Math.round(x/this.cellSize)-1]
+  }
+
+  onCrash(point){
+    // se c'è un punto di ripartenza definito, allora siamo in incidente appena commesso
+    if(point){
+      let points=[...this.state.points];
+      //tolgo gli ultimi due
+      if(points.length>1 )
+        points=points.filter((x,i)=>i<points.length-2);
+      //aggiungo il punto di ripartenza passato dal canvas (due volte, per il workaround della preview, che toglie l'ultimo sull'onMove)
+      points.push(point[0]+","+point[1],point[0]+","+point[1]);
+      this.setState(state=>({
+        gear:0,
+        points
+      }));
+     
+    }
+    // altrimenti siamo in stato incidente dopo una ripartenza da un altro incidente, quindi solamente annullo la mossa
+    else{
+      let points=[...this.state.points];
+      points=points.filter((x,i)=>i<points.length-1);
+      this.setState(state=>({
+        points,
+        gear:0,
+        isMoving:true
+      }));
+    }
+  }
+
+
+  getCrashInfo(x,y){
+    //cerco il punto di partenza del segmento
+    var startPoint=this.state.points[this.state.points.length-2], lastC=startPoint.split(","), prevX= lastC[0], prevY= lastC[1];
+    var pointInfo=this.getPointAndDir(prevX,x,prevY,y);
+    var slGear=this.getGear(x,y,prevX,prevY);
+    var points=this.getGridValuesOfSegment(x,y,pointInfo.direction,slGear);
+    console.log(points);
+    let redPoints=points.filter(point=>point!==1);
+    let lastGoodPoint=null;
+
+    /*se non trovo mai il colore della pista,
+    vuol dire che sto partendo dallo sfondo verso lo sfondo.
+    quindi non valorizzo il punto di ripartenza per bloccare la mossa */
+    if(points.indexOf(1)!==-1){
+    var index = points.lastIndexOf(0)===-1?points.lastIndexOf(2):points.lastIndexOf(0);
+   
+    
+      lastGoodPoint=points[index];
+    }
+    return {yesItIs:slGear>0 && (redPoints.length>2 || points[0]!==1),lastGoodPoint};
   }
  
   handleMove(event){
@@ -344,6 +378,7 @@ class Grid extends React.Component {
             startLaneStart:{x,y},
             isMoving:true
           }));
+          else alert("click a point on the track to draw the start lane.");
       }else if(Object.keys(this.state.startLane).length > 0 && this.getIsValidStartLane()) {
         this.setState(state=>({
           isMoving:false
@@ -351,17 +386,32 @@ class Grid extends React.Component {
       }
       //segno il punto di partenza sulla linea di partenza
     }else if(this.state.gameStage===3){
-      var pointAndDir=this.getPointAndDir(this.state.startLane.x1,this.state.startLane.x2,this.state.startLane.y1,this.state.startLane.y2);
-      var startLaneGear=this.getGear(this.state.startLane.x1,this.state.startLane.x2,this.state.startLane.y1,this.state.startLane.x2,this.state.startLane.y2)
-      if(!this.state.isMoving && this.getPointsOfSegment(this.state.startLane.x2,this.state.startLane.y2,pointAndDir.direction,startLaneGear).indexOf([x,y])>0){
-        alert("ok");
+      var sl=this.state.startLane;
+      var pointInfo=this.getPointAndDir(sl.x1,sl.x2,sl.y1,sl.y2);
+      var slGear=this.getGear(sl.x2,sl.y2,sl.x1,sl.y1);
+      var slPoints=this.getPointsOfSegment(sl.x2,sl.y2,pointInfo.direction,slGear);
+      var isInStartLane=slPoints.indexOf(x+","+y)>0 && slPoints.indexOf(x+","+y)<slPoints.length-1;
+      if(!this.state.isMoving) {
         this.lastPoint=[x,y];
-        this.setState(state=>({
-          points:this.state.points.length===0?[x+","+y,x+","+y]:this.getMoveDetails(x,y).points,
-          isMoving:true
-        }));
+        if(isInStartLane && this.state.points.length===0){
+          this.setState(state=>({
+            points:[x+","+y,x+","+y],
+            isMoving:true
+          }));
+        }
+        else if(this.state.points.length>0){
+         
+          this.setState(state=>({
+           
+            isMoving:true,
+            drawPoint:[...this.state.points[this.state.points.length-1].split(","),this.directionHistory],
+            points:this.getMoveDetails(x,y,true).points
+          }));
+        }else alert("click a point on start lane to start");
       }
       else if(!this.isUTurn(this.getMoveDetails(x,y).direction)&&!this.isOutOfRange(x,y)){
+        var p=this.state.points[this.state.points.length-1].split(",");
+        console.log(this.getCrashInfo(p[0],p[1]));
         this.directionHistory=this.getMoveDetails(x,y).direction;
         this.setState(state=>({
           gear:this.getGear(),
