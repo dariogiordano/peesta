@@ -204,6 +204,8 @@ class Grid extends React.Component {
           break;
       }
     }
+    if(moveMade && this.getCrashInfo(newX,newY).yesItIs)
+    alert("crash")
     // aggiungo gli ultimi due punti all'elenco
     if(!moveMade)
       points.push(newX+","+newY);
@@ -330,21 +332,18 @@ class Grid extends React.Component {
     var startPoint=this.state.points[this.state.points.length-2], lastC=startPoint.split(","), prevX= lastC[0], prevY= lastC[1];
     var pointInfo=this.getPointAndDir(prevX,x,prevY,y);
     var slGear=this.getGear(x,y,prevX,prevY);
-    var points=this.getGridValuesOfSegment(x,y,pointInfo.direction,slGear);
-    console.log(points);
-    let redPoints=points.filter(point=>point!==1);
+    var points=this.getPointsOfSegment(x,y,pointInfo.direction,slGear);
+    var gridValues=this.getGridValuesOfSegment(x,y,pointInfo.direction,slGear);
+    let redPoints=gridValues.filter(point=>point!==1);
     let lastGoodPoint=null;
-
     /*se non trovo mai il colore della pista,
     vuol dire che sto partendo dallo sfondo verso lo sfondo.
     quindi non valorizzo il punto di ripartenza per bloccare la mossa */
-    if(points.indexOf(1)!==-1){
-    var index = points.lastIndexOf(0)===-1?points.lastIndexOf(2):points.lastIndexOf(0);
-   
-    
+    if(gridValues.indexOf(1)!==-1){
+    var index = gridValues.lastIndexOf(0)!==-1?gridValues.lastIndexOf(0):gridValues.lastIndexOf(2);
       lastGoodPoint=points[index];
     }
-    return {yesItIs:slGear>0 && (redPoints.length>2 || points[0]!==1),lastGoodPoint};
+    return {yesItIs:slGear>0 && (redPoints.length>2 || gridValues[0]!==1),lastGoodPoint};
   }
  
   handleMove(event){
@@ -400,24 +399,20 @@ class Grid extends React.Component {
           }));
         }
         else if(this.state.points.length>0){
-         
           this.setState(state=>({
-           
             isMoving:true,
-            drawPoint:[...this.state.points[this.state.points.length-1].split(","),this.directionHistory],
-            points:this.getMoveDetails(x,y,true).points
+            points:this.getMoveDetails(x,y).points
           }));
         }else alert("click a point on start lane to start");
       }
       else if(!this.isUTurn(this.getMoveDetails(x,y).direction)&&!this.isOutOfRange(x,y)){
-        var p=this.state.points[this.state.points.length-1].split(",");
-        console.log(this.getCrashInfo(p[0],p[1]));
-        this.directionHistory=this.getMoveDetails(x,y).direction;
+        var moveDetails=this.getMoveDetails(x,y,true);
+        this.directionHistory=moveDetails.direction;
         this.setState(state=>({
           gear:this.getGear(),
           isMoving:false,
           drawPoint:[...this.state.points[this.state.points.length-1].split(","),this.directionHistory],
-          points:this.getMoveDetails(x,y,true).points
+          points:moveDetails.points
         }));
       }
     }
