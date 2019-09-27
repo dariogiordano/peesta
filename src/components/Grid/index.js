@@ -39,7 +39,7 @@ class Grid extends React.Component {
     this.getStartLane=this.getStartLane.bind(this);
     this.getNewPointFromGear=this.getNewPointFromGear.bind(this);
     this.getGridValue=this.getGridValue.bind(this);
-    this.getIsValidStartLane=this.getIsValidStartLane.bind(this);
+    this.isValidStartLane=this.isValidStartLane.bind(this);
     this.getPointsOfSegment=this.getPointsOfSegment.bind(this);
     this.getGridValuesOfSegment=this.getGridValuesOfSegment.bind(this);
     this.getCrashInfo=this.getCrashInfo.bind(this);
@@ -268,17 +268,17 @@ class Grid extends React.Component {
     }
   }
 
-  getIsValidStartLane(){
-    let valuesArray=[this.getGridValue(this.state.startLane.x1,this.state.startLane.y1),this.getGridValue(this.state.startLane.x2,this.state.startLane.y2)];
-    return valuesArray.indexOf(0)>=0&&valuesArray.indexOf(2)>=0
+  isValidStartLane(startLane){
+    let valuesArray=[this.getGridValue(startLane.x1,startLane.y1),this.getGridValue(startLane.x2,startLane.y2)];
+    return Object.keys(startLane).length > 0 && valuesArray.indexOf(0) >= 0 && valuesArray.indexOf(2) >= 0
   }
 
-  getNewPointFromGear(x,y,direction,i){
+  getNewPointFromGear(x,y,direction,gear){
     var newX;
     var newY;
     x=parseInt(x);
     y=parseInt(y);
-    let size=parseInt(this.cellSize*i)
+    let size=parseInt(this.cellSize*gear)
     switch(direction){
       case "O": newX=x-size;newY=y; 
       break;
@@ -354,7 +354,7 @@ class Grid extends React.Component {
             isMoving:true
           }));
           else alert("click a point on the track to draw the start lane.");
-      }else if(Object.keys(this.state.startLane).length > 0 && this.getIsValidStartLane()) {
+      }else if(this.isValidStartLane(this.state.startLane)) {
         this.setState(state=>({
           isMoving:false
         }));
