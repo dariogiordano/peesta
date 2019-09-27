@@ -52,69 +52,11 @@ class DottedCanvas extends React.Component {
     
   }
 
-  getHexesInfo(x,y,direction,gear){
-    let hexes=[];
-    let points=[];
-    for(var i=0; i<=parseInt(gear);i++){
-      let pointToCheck=this.checkDirection(x,y,direction,i);
-      let p = this.ctx.getImageData(pointToCheck[0], pointToCheck[1], 1, 1).data; 
-      let hex = "#" + ("000000" + this.rgbToHex(p[0], p[1], p[2])).slice(-6);
-      hexes.push(hex);
-      points.push(pointToCheck)
-    }
-    return{hexes,points}
-  }
+ 
 
-  isCrash(){
-    let hexesInfo=this.getHexesInfo(this.props.point[0],this.props.point[1],this.props.point[2],this.props.gear);
-    let hexes=hexesInfo.hexes;
-    let points=hexesInfo.points;
-    let redPoints=hexes.filter(hex=>hex!==this.props.trackColor);
-    let lastGoodPoint=null;
-    /**
-     * se il primo punto non è nè pista nè sfondo, vuol dire che sono in una posizione borderline, sul confine sfumato tra pista e bordo.
-     * in questo caso metto l'incidente a false
-     */
-    if(hexes[0]!==this.props.trackColor && hexes[0]!==this.props.bgColor){
-      return {yesItIs:false,lastGoodPoint};
-    }
-    /*se non trovo mai il colore della pista,
-    vuol dire che sto partendo dallo sfondo verso lo sfondo.
-    quindi non valorizzo il punto di ripartenza per bloccare la mossa */
-    else if(hexes.indexOf(this.props.trackColor)!==-1)
-      lastGoodPoint=points[hexes.lastIndexOf(this.props.bgColor)];
-    return {yesItIs:this.props.gear>0 && (redPoints.length>2 || hexes[0]!==this.props.trackColor  || hexes[0]===this.props.incidentColor),lastGoodPoint};
-  }
+  
 
-  checkDirection(x,y,direction,i){
-    var newX;
-    var newY;
-    x=parseInt(x);
-    y=parseInt(y);
-    if(1>0){
-      let size=parseInt(this.props.cellSize*i)
-      switch(direction){
-        case "O": newX=x-size;newY=y; 
-        break;
-        case "NO": newX=x-size;newY=y+size;
-        break;
-        case "N":  newX=x;newY=y+size;
-        break;
-        case "NE":  newX=x+size;newY=y+size;
-        break;
-        case "E":  newX=x+size;newY=y;
-        break;
-        case "SE":  newX=x+size;newY=y-size;
-        break;
-        case "S":  newX=x;newY=y-size;
-        break;
-        case "SO":  newX=x-size;newY=y-size;
-        break;
-        default:  newX=x;newY=y;
-      }
-    }
-     return [newX,newY];
-  }
+  
   
   recursiveCleanGrid(grid){
     var needOneMore=false;
@@ -238,25 +180,15 @@ class DottedCanvas extends React.Component {
       }.bind(this));
     }
     // terza fase di gioco: gara;
-   else if(this.props.gameStage===3 && this.props.point.length>0 && !this.props.isMoving){
+    /**
+     * qui viene disegnato il nuovo punto non appena la mossa è conclusa.
+     */
+   else if(this.props.gameStage===3 && this.props.point.x && this.props.point.y && !this.props.isMoving){
       this.ctx.lineWidth = 1;
-      var isCrash=this.isCrash();
-      if(isCrash.yesItIs){
-        if(isCrash.lastGoodPoint)
-        {
-          this.ctx.beginPath();
-          this.ctx.fillStyle = this.props.incidentColor;
-          this.ctx.arc(isCrash.lastGoodPoint[0],isCrash.lastGoodPoint[1], 4, 0, 2 * Math.PI);
-          this.ctx.stroke();
-          this.ctx.fill();
-        }
-        this.props.onCrash(isCrash.lastGoodPoint);
-      }else if(this.props.gear>0){
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = "rgba(50,50,250,0.7)";
-        this.ctx.arc(this.props.point[0],this.props.point[1], 4, 0, 2 * Math.PI);
-        this.ctx.stroke();
-      }
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = this.props.point.isCrash?"red":"rgba(50,50,250,0.7)";
+      this.ctx.arc(this.props.point.x,this.props.point.y, 4, 0, 2 * Math.PI);
+      this.ctx.stroke();
     }
   }
 

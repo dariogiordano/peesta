@@ -12,7 +12,6 @@ class Grid extends React.Component {
     this.gearMax=6;
     this.cellSize=20;
     this.trackColor="#ffffee"
-    this.incidentColor="#cc0000"
     this.bgColor="#bbefef"
     
     /*init*/
@@ -34,7 +33,6 @@ class Grid extends React.Component {
     
     /*bindings*/
     this.handleClick = this.handleClick.bind(this);
-    this.onCrash = this.onCrash.bind(this);
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
@@ -45,6 +43,8 @@ class Grid extends React.Component {
     this.getPointsOfSegment=this.getPointsOfSegment.bind(this);
     this.getGridValuesOfSegment=this.getGridValuesOfSegment.bind(this);
     this.getCrashInfo=this.getCrashInfo.bind(this);
+    this.isUTurn=this.isUTurn.bind(this);
+    this.isOutOfRange=this.isOutOfRange.bind(this);
   }
 
   isUTurn(lastDirection){
@@ -64,8 +64,7 @@ class Grid extends React.Component {
     }
   }
 
-  isOutOfRange(x,y){
-    var points=this.getMoveDetails(x,y).points;
+  isOutOfRange(points){
     var point=points[points.length-1].split(",");
     return point[0]<this.cellSize || point[0]>this.state.dimensions[0] || point[1]<this.cellSize||point[1]>this.state.dimensions[1];
   }
@@ -123,7 +122,6 @@ class Grid extends React.Component {
     var newX=x;
     var newY=y;
     var direction="";
-    
     //trovo la lungezza e il coseno e l'angolo
     var ipo=Math.sqrt(Math.pow(x-prevX,2)+Math.pow(y-prevY,2));
     var cos=(x-prevX)/ipo;
@@ -151,10 +149,11 @@ class Grid extends React.Component {
     //creo una copia privata dei points attuali
     let points=[...this.state.points];
     //se mi sto muovendo rimuovo l'ultimo valore prima di metterne uno nuovo
-    if(points.length>1 && !moveMade)
+    if(points.length>1&& !moveMade)
       points=points.filter((x,i)=>i!==points.length-1);
     //cerco il punto di partenza del segmento
-    var startPoint=points[points.length-1], lastC=startPoint.split(","), prevX= lastC[0], prevY= lastC[1];
+    var startPoint=moveMade?points[points.length-2]:points[points.length-1],
+    lastC=startPoint.split(","), prevX= lastC[0], prevY= lastC[1];
     var pointAndDir=this.getPointAndDir(prevX,x,prevY,y);
     var newX=pointAndDir.point[0];
     var newY=pointAndDir.point[1];
@@ -164,11 +163,11 @@ class Grid extends React.Component {
     // se la marcia è minore o maggiore del consensito forzo la lunghezza in base alla marcia e alla posizione discretizzata del mouse
     if(segmentToChangeGear-1>this.state.gear || segmentToChangeGear+1<this.state.gear || segmentToChangeGear>this.gearMax){
       var movement=0;
-        if(segmentToChangeGear-1>this.state.gear && this.state.gear<this.gearMax)
-          movement=parseInt((this.state.gear+1)*this.cellSize);
-        else if(segmentToChangeGear+1<this.state.gear)
-          movement=parseInt((this.state.gear-1)*this.cellSize);
-        else movement=this.cellSize*this.gearMax;
+      if(segmentToChangeGear-1>this.state.gear && this.state.gear<this.gearMax)
+        movement=parseInt((this.state.gear+1)*this.cellSize);
+      else if(segmentToChangeGear+1<this.state.gear)
+        movement=parseInt((this.state.gear-1)*this.cellSize);
+      else movement=this.cellSize*this.gearMax;
       prevX=parseInt(prevX);
       prevY=parseInt(prevY);
       switch (direction){
@@ -204,15 +203,22 @@ class Grid extends React.Component {
           break;
       }
     }
-    if(moveMade && this.getCrashInfo(newX,newY).yesItIs)
-    alert("crash")
-    // aggiungo gli ultimi due punti all'elenco
-    if(!moveMade)
+    
+    var crashInfo=this.getCrashInfo(newX,newY,direction,this.getGear(newX,newY,prevX,prevY));
+    if(moveMade && crashInfo.yesItIs && crashInfo.lastGoodPoint){
+     console.log(crashInfo.lastGoodPoint);
+     points=points.filter((p,i)=>i<points.length-1);
+      points.push(crashInfo.lastGoodPoint,crashInfo.lastGoodPoint);
+    }else if(moveMade && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
+     
+      points=null;
+       
+     }
+    else 
       points.push(newX+","+newY);
-    else
-      points.push(prevX+","+prevY);
+    console.log(points);
     //resituisco i punti passati dalla discretizzazione e la direzione di marcia
-    return {points,direction};
+    return {points,direction,isCrash:crashInfo.yesItIs};
   }
 
   onGridSet(grid){
@@ -296,44 +302,14 @@ class Grid extends React.Component {
   }
   
   getGridValue(x,y){
+    if((Math.round(y/this.cellSize)-1)>0&&(Math.round(x/this.cellSize)-1)>0)
     return this.state.grid[Math.round(y/this.cellSize)-1][Math.round(x/this.cellSize)-1]
+    else return 0;
   }
 
-  onCrash(point){
-    // se c'è un punto di ripartenza definito, allora siamo in incidente appena commesso
-    if(point){
-      let points=[...this.state.points];
-      //tolgo gli ultimi due
-      if(points.length>1 )
-        points=points.filter((x,i)=>i<points.length-2);
-      //aggiungo il punto di ripartenza passato dal canvas (due volte, per il workaround della preview, che toglie l'ultimo sull'onMove)
-      points.push(point[0]+","+point[1],point[0]+","+point[1]);
-      this.setState(state=>({
-        gear:0,
-        points
-      }));
-     
-    }
-    // altrimenti siamo in stato incidente dopo una ripartenza da un altro incidente, quindi solamente annullo la mossa
-    else{
-      let points=[...this.state.points];
-      points=points.filter((x,i)=>i<points.length-1);
-      this.setState(state=>({
-        points,
-        gear:0,
-        isMoving:true
-      }));
-    }
-  }
-
-
-  getCrashInfo(x,y){
-    //cerco il punto di partenza del segmento
-    var startPoint=this.state.points[this.state.points.length-2], lastC=startPoint.split(","), prevX= lastC[0], prevY= lastC[1];
-    var pointInfo=this.getPointAndDir(prevX,x,prevY,y);
-    var slGear=this.getGear(x,y,prevX,prevY);
-    var points=this.getPointsOfSegment(x,y,pointInfo.direction,slGear);
-    var gridValues=this.getGridValuesOfSegment(x,y,pointInfo.direction,slGear);
+  getCrashInfo(x,y,direction,gear){
+    var points=this.getPointsOfSegment(x,y,direction,gear);
+    var gridValues=this.getGridValuesOfSegment(x,y,direction,gear);
     let redPoints=gridValues.filter(point=>point!==1);
     let lastGoodPoint=null;
     /*se non trovo mai il colore della pista,
@@ -343,7 +319,7 @@ class Grid extends React.Component {
     var index = gridValues.lastIndexOf(0)!==-1?gridValues.lastIndexOf(0):gridValues.lastIndexOf(2);
       lastGoodPoint=points[index];
     }
-    return {yesItIs:slGear>0 && (redPoints.length>2 || gridValues[0]!==1),lastGoodPoint};
+    return {yesItIs:gear>0 && (redPoints.length>2 || gridValues[0]!==1),lastGoodPoint};
   }
  
   handleMove(event){
@@ -405,15 +381,25 @@ class Grid extends React.Component {
           }));
         }else alert("click a point on start lane to start");
       }
-      else if(!this.isUTurn(this.getMoveDetails(x,y).direction)&&!this.isOutOfRange(x,y)){
+      else {
         var moveDetails=this.getMoveDetails(x,y,true);
-        this.directionHistory=moveDetails.direction;
-        this.setState(state=>({
-          gear:this.getGear(),
-          isMoving:false,
-          drawPoint:[...this.state.points[this.state.points.length-1].split(","),this.directionHistory],
-          points:moveDetails.points
-        }));
+        var gear=moveDetails.isCrash?0:this.getGear();
+        if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) ){
+          this.directionHistory=moveDetails.direction;
+          var pointArray=moveDetails.points[this.state.points.length-1].split(","),
+          drawPoint={
+            x:pointArray[0],
+            y:pointArray[1],
+            isCrash:moveDetails.isCrash
+          }
+          this.setState(state=>({
+            gear,
+            isMoving:false,
+            drawPoint,
+            points:moveDetails.points,
+
+          }));
+        }  
       }
     }
   }
@@ -433,9 +419,7 @@ class Grid extends React.Component {
             <DottedCanvas
               gameStage={this.state.gameStage}
               trackColor={this.trackColor}
-              bgColor={this.bgColor}
-              incidentColor={this.incidentColor}
-              onCrash={this.onCrash}
+              bgColor={this.bgColor}              
               cellSize={this.cellSize}
               gear={this.state.gear}
               isMoving={this.state.isMoving}
