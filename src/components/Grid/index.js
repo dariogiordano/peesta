@@ -48,8 +48,23 @@ class Grid extends React.Component {
   }
 
   isUTurn(lastDirection){
-    //o siamo all'inizio o dopo un incidente (gear=0): in questi casi possiamo andare dove vogliamo
-    if (this.state.points.length<=2 || this.state.gear===0)
+    // siamo a inizio gara: in questo caso possiamo andare solo nel senso di marcia
+    if (this.state.points.length<=2){
+      let dir=this.state.startLane.directionOfTravel
+      switch(lastDirection){
+        case "O": return !(dir==="NO" || dir==="O"|| dir==="SO");
+        case "NO": return !(dir==="N" || dir==="NO"|| dir==="O");
+        case "N": return !(dir==="NE" || dir==="N"|| dir==="NO");
+        case "NE": return !(dir==="E" || dir==="NE"|| dir==="N");
+        case "E": return !(dir==="SE" || dir==="E"|| dir==="NE");
+        case "SE": return !(dir==="S" || dir==="SE"|| dir==="E");
+        case "S": return !(dir==="SO" || dir==="S"|| dir==="SE");
+        case "SO": return !(dir==="O" || dir==="SO"|| dir==="S");
+        default: return false;
+      }
+    }
+    // siamo dopo un incidente (gear=0): in questo caso possiamo andare dove vogliamo
+    if (this.state.gear===0)
       return false;
     switch(lastDirection){
       case "O": return this.directionHistory==="E";
