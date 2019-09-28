@@ -10,10 +10,10 @@ polyline{
   stroke-width: 1;
 }
 
-line{
+#startLane polyline{
   fill: rgba(0, 0, 0, 0);
-  stroke: rgba(0, 255, 0, 0.8);
-  stroke-width: 3;
+  stroke: rgba(0, 140, 0, 0.5);
+  stroke-width: 4;
 }`;
 
 export default styledSvg;
