@@ -48,10 +48,10 @@ class Grid extends React.Component {
   }
 
   isUTurn(lastDirection){
+    console.log(lastDirection,this.state.startLane.directionOfTravel)
     // siamo a inizio gara: in questo caso possiamo andare solo nel senso di marcia
     if (this.state.points.length===2){
-     
-      let dir=this.state.startLane.directionOfTravel
+      let dir=this.state.startLane.directionOfTravel;
       switch(lastDirection){
         case "O": return !(dir==="NO" || dir==="O"|| dir==="SO");
         case "NO": return !(dir==="N" || dir==="NO"|| dir==="O");
@@ -110,10 +110,13 @@ class Grid extends React.Component {
   getGear(x1,y1,x2,y2){
     var ipo=Math.sqrt(Math.pow(Math.abs(x1-x2),2)+Math.pow(Math.abs(y1-y2),2));
     const diagonale= Math.sqrt(Math.pow(this.cellSize,2)+Math.pow(this.cellSize,2));
+    var gear=0;
     if(Math.abs(x1-x2)===Math.abs(y1-y2))
-      return Math.round(ipo/diagonale);
+      gear=Math.round(ipo/diagonale);
     else
-      return Math.round(ipo/this.cellSize);
+      gear=Math.round(ipo/this.cellSize);
+    return gear;
+
   }
 
   getPointAndDir(prevX,x,prevY,y){
@@ -143,16 +146,16 @@ class Grid extends React.Component {
     return{point:[newX,newY],direction}
   }
 
-  getMoveDetails(x,y,moveStatus){
+  getMoveDetails(x,y,moveMade){
     //creo una copia privata dei points attuali
     let points=[...this.state.points];
     //se mi sto muovendo rimuovo l'ultimo valore prima di metterne uno nuovo
    
-    if(points.length>1 && moveStatus!=="end")
+    if(points.length>1 && !moveMade)
       points=points.filter((x,i,a)=>i!==a.length-1);
     //cerco il punto di partenza del segmento
-    var startPoint=points[points.length-1],
-    prevX= startPoint[0], prevY= startPoint[1];
+    var startPoint=moveMade?points[points.length-2]:points[points.length-1],
+    prevX= startPoint.x, prevY= startPoint.y;
     var pointAndDir=this.getPointAndDir(prevX,x,prevY,y);
     var newX=pointAndDir.point[0];
     var newY=pointAndDir.point[1];
@@ -204,16 +207,17 @@ class Grid extends React.Component {
     }
     var gear=this.getGear(prevX,prevY,newX,newY),
     crashInfo=this.getCrashInfo(newX,newY,direction,gear);
-    if(moveStatus==="end" && crashInfo.yesItIs && crashInfo.lastGoodPoint){
+    
+    if(moveMade && crashInfo.yesItIs && crashInfo.lastGoodPoint){
       points=points.filter((p,i)=>i<points.length-1);
-      points.push(crashInfo.lastGoodPoint,crashInfo.lastGoodPoint);
-    }else if(moveStatus==="end" && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
+      points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true},{x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1]});
+
+    }else if(moveMade && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
       points=null;  
     }
-    else if(moveStatus!=="end")
-      points.push([newX,newY]);
-    else if(moveStatus==="end")
-      points.push([prevX,prevY]);
+    else 
+      points.push({x:newX,y:newY});
+    
 
     //resituisco i punti passati dalla discretizzazione e la direzione di marcia
     return {points,direction,gear,isCrash:crashInfo.yesItIs};
@@ -257,7 +261,6 @@ class Grid extends React.Component {
   }
 
   getArrowFromPoint(point,direction){
-    
    var x1=parseInt(point[0]),
     y1=parseInt(point[1]),
     x2=parseInt(point[0]),
@@ -382,7 +385,8 @@ class Grid extends React.Component {
   handleMove(event){
     var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
     var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
-    if(this.state.isMoving && this.state.points[this.state.points.length-1]!==[x,y] && !(event.clientX>=this.lastPoint[0]-(this.cellSize/2) && event.clientX<this.lastPoint[0]+(this.cellSize/2) && event.clientY>=this.lastPoint[1]-(this.cellSize/2) && event.clientY<this.lastPoint[1]+(this.cellSize/2))){
+    
+    if(this.state.isMoving && !(event.clientX>=this.lastPoint[0]-(this.cellSize/2) && event.clientX<this.lastPoint[0]+(this.cellSize/2) && event.clientY>=this.lastPoint[1]-(this.cellSize/2) && event.clientY<this.lastPoint[1]+(this.cellSize/2))){
       this.lastPoint=[x,y];  
       if(this.state.gameStage===2){
         var pointAndDir=this.getPointAndDir(this.state.startLaneStart.x,x,this.state.startLaneStart.y,y);
@@ -427,18 +431,18 @@ class Grid extends React.Component {
         
         if(this.isInStartLane(x,y) && this.state.points.length===0){
           this.setState(state=>({
-            points:[[x,y]],
+            points:[{x,y},{x,y}],
             isMoving:true
           }));
         }
         else if(this.state.points.length>0){
           this.setState(state=>({
             isMoving:true,
-            points:this.getMoveDetails(x,y,"start").points
+            points:this.getMoveDetails(x,y).points
           }));
         }else alert("click a point on start lane to start");
       } else {
-        var moveDetails=this.getMoveDetails(x,y,"end");
+        var moveDetails=this.getMoveDetails(x,y,true);
         /*
         if (moveDetails.points...
         points NON viene restituito da get Move Details in caso di ripartenza dopo un incidente verso un punto NON sulla pista 
@@ -465,29 +469,27 @@ class Grid extends React.Component {
 
   render() {
     var arrows =[];
-    var lines=[];
+    var circles=[];
+    var polylinepoints="";
+    if(this.state.points.length>0){
+      let filtered=this.state.points.filter((point,i,a)=>i>=a.length-10);
+      filtered.forEach(function(point){
+        polylinepoints+=point.x+(",")+point.y+" ";
+      });
+    }
     if(this.state.points.length>1)
-    lines=this.state.points
+    circles=this.state.points
     .filter((point,i,a)=>i>=a.length-10)
     .map(function(point,i,a){
-    
       if(i===0)
-      return <point key={"point"+i}></point>;
+      return false;
       else{
-        let style=i<10?{opacity: 1} :{opacity: 0} ;
-        if(i===a.length-1) return(
-          <g key={"line"+i}>
-          <line  x1={a[i-1][0]} y1={a[i-1][1]} x2={a[i][0]} y2={a[i][1]} style={style}></line>
-          </g>
+        let style=point.isCrash?{stroke: "red"}:{stroke: "green"};
+        if(i<a.length-1) return(
+          <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
         )
-        else return(
-          <g key={"line"+i}>
-          <line x1={a[i-1][0]} y1={a[i-1][1]} x2={a[i][0]} y2={a[i][1]} style={style}></line>
-          <circle cx={a[i][0]} cy={a[i][1]} r="4" style={style}/>
-          </g>
-        )
+        else return false;
       }
-
     })
     if(this.state.startLane.arrows)
     arrows=this.state.startLane.arrows.map(function(arrow,i) {
@@ -513,19 +515,16 @@ class Grid extends React.Component {
             />
             {this.state.gameStage>0 &&
               <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
-                 {lines}
+                {circles}
                 <g id="startLane">
-                {arrows}
-               
+                  {arrows}
                 </g>
-                
+                <polyline id="polyline" points={polylinepoints}/>
               </DrawBoardSvg>
             }
             {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
-          
           </div>
         </StyledGrid>
-      
         </div>
     );
   }
