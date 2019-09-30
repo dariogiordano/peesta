@@ -9,10 +9,11 @@ class Grid extends React.Component {
   constructor(props) {
     super(props);
     /*setup*/
-    this.gearMax=6;
-    this.cellSize=20;
+    this.gearMax=6
+    this.cellSize=20
     this.trackColor="#ffffee"
     this.bgColor="#bbefef"
+    this.trailLength=5
     
     /*init*/
     this.state = {
@@ -48,7 +49,7 @@ class Grid extends React.Component {
   }
 
   isUTurn(lastDirection){
-    console.log(lastDirection,this.state.startLane.directionOfTravel)
+    
     // siamo a inizio gara: in questo caso possiamo andare solo nel senso di marcia
     if (this.state.points.length===2){
       let dir=this.state.startLane.directionOfTravel;
@@ -146,16 +147,22 @@ class Grid extends React.Component {
     return{point:[newX,newY],direction}
   }
 
-  getMoveDetails(x,y,moveMade){
+  getMoveDetails(x,y,status){
     //creo una copia privata dei points attuali
     let points=[...this.state.points];
     //se mi sto muovendo rimuovo l'ultimo valore prima di metterne uno nuovo
    
-    if(points.length>1 && !moveMade)
+    if(points.length>1 && status==="moving")
       points=points.filter((x,i,a)=>i!==a.length-1);
     //cerco il punto di partenza del segmento
-    var startPoint=moveMade?points[points.length-2]:points[points.length-1],
-    prevX= startPoint.x, prevY= startPoint.y;
+    var startPoint=points[points.length-1];
+    //se la mossa è finita, prendo gli ultimi due punti inseriti, altrimenti considero la x e y passatemi dall'evento per valutare l'ultimo punto
+    if(status==="moved"){
+      startPoint=points[points.length-2];
+      x=points[points.length-1].x;
+      y=points[points.length-1].y;
+    }
+    var prevX= startPoint.x, prevY= startPoint.y;
     var pointAndDir=this.getPointAndDir(prevX,x,prevY,y);
     var newX=pointAndDir.point[0];
     var newY=pointAndDir.point[1];
@@ -208,17 +215,20 @@ class Grid extends React.Component {
     var gear=this.getGear(prevX,prevY,newX,newY),
     crashInfo=this.getCrashInfo(newX,newY,direction,gear);
     
-    if(moveMade && crashInfo.yesItIs && crashInfo.lastGoodPoint){
+    if(status==="moved" && crashInfo.yesItIs && crashInfo.lastGoodPoint){
       points=points.filter((p,i)=>i<points.length-1);
-      points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true},{x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1]});
+      points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true});
 
-    }else if(moveMade && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
+    }else if(status==="moved" && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
       points=null;  
     }
-    else 
+    else if(status==="moved"){
+      points[points.length-1].isMoved=true;  
+    }
+    else if(status!=="moved")
       points.push({x:newX,y:newY});
     
-
+console.log(pointAndDir);
     //resituisco i punti passati dalla discretizzazione e la direzione di marcia
     return {points,direction,gear,isCrash:crashInfo.yesItIs};
   }
@@ -253,7 +263,7 @@ class Grid extends React.Component {
       case "N": return "E";
       case "NE": return "SE";
       case "E": return "S";
-      case "SE": return "NO";
+      case "SE": return "SO";
       case "S": return "O";
       case "SO": return "NO";
       default: return dir;
@@ -390,12 +400,13 @@ class Grid extends React.Component {
       this.lastPoint=[x,y];  
       if(this.state.gameStage===2){
         var pointAndDir=this.getPointAndDir(this.state.startLaneStart.x,x,this.state.startLaneStart.y,y);
+     
         this.setState(state=>({
           startLane:this.getStartLane(pointAndDir.direction)
         }));
       }else if(this.state.gameStage===3){
         this.setState(state=>({
-          points:this.getMoveDetails(x,y).points
+          points:this.getMoveDetails(x,y,"moving").points
         }));
       }
     }
@@ -431,18 +442,18 @@ class Grid extends React.Component {
         
         if(this.isInStartLane(x,y) && this.state.points.length===0){
           this.setState(state=>({
-            points:[{x,y},{x,y}],
+            points:[{x,y}],
             isMoving:true
           }));
         }
         else if(this.state.points.length>0){
           this.setState(state=>({
             isMoving:true,
-            points:this.getMoveDetails(x,y).points
+            points:this.getMoveDetails(x,y,"start").points
           }));
         }else alert("click a point on start lane to start");
       } else {
-        var moveDetails=this.getMoveDetails(x,y,true);
+        var moveDetails=this.getMoveDetails(x,y,"moved");
         /*
         if (moveDetails.points...
         points NON viene restituito da get Move Details in caso di ripartenza dopo un incidente verso un punto NON sulla pista 
@@ -472,25 +483,24 @@ class Grid extends React.Component {
     var circles=[];
     var polylinepoints="";
     if(this.state.points.length>0){
-      let filtered=this.state.points.filter((point,i,a)=>i>=a.length-10);
+      let filtered=this.state.points.filter((point,i,a)=>i>=a.length-this.trailLength);
       filtered.forEach(function(point){
         polylinepoints+=point.x+(",")+point.y+" ";
       });
+      circles=this.state.points
+      .filter((point,i,a)=>i>=a.length-this.trailLength)
+      .map(function(point,i,a){
+        if(i===0)
+        return false;
+        else{
+          let style=point.isCrash?{stroke: "red"}:{stroke: "green"};
+          if(point.isCrash || point.isMoved) return(
+            <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
+          )
+          else return false;
+        }
+      })
     }
-    if(this.state.points.length>1)
-    circles=this.state.points
-    .filter((point,i,a)=>i>=a.length-10)
-    .map(function(point,i,a){
-      if(i===0)
-      return false;
-      else{
-        let style=point.isCrash?{stroke: "red"}:{stroke: "green"};
-        if(i<a.length-1) return(
-          <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
-        )
-        else return false;
-      }
-    })
     if(this.state.startLane.arrows)
     arrows=this.state.startLane.arrows.map(function(arrow,i) {
       return (
