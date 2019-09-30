@@ -13,7 +13,7 @@ class Grid extends React.Component {
     this.cellSize=20
     this.trackColor="#ffffee"
     this.bgColor="#bbefef"
-    this.trailLength=5
+    this.trailLength=20
     
     /*init*/
     this.state = {
@@ -481,25 +481,40 @@ console.log(pointAndDir);
   render() {
     var arrows =[];
     var circles=[];
+    var lines=[];
     var polylinepoints="";
+    var trail=this.trailLength;
     if(this.state.points.length>0){
-      let filtered=this.state.points.filter((point,i,a)=>i>=a.length-this.trailLength);
+      let filtered=this.state.points.filter((point,i,points)=>i>=points.length-this.trailLength);
       filtered.forEach(function(point){
         polylinepoints+=point.x+(",")+point.y+" ";
       });
-      circles=this.state.points
-      .filter((point,i,a)=>i>=a.length-this.trailLength)
-      .map(function(point,i,a){
-        if(i===0)
+      circles=filtered.reverse().map(function(point,i,a){
+        if(i===a.length-1)
         return false;
         else{
-          let style=point.isCrash?{stroke: "red"}:{stroke: "green"};
+          let style={}
+          style.stroke=point.isCrash?"red":"green";
+          style.opacity=1/i;
           if(point.isCrash || point.isMoved) return(
             <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
           )
           else return false;
         }
       })
+      lines=filtered.map(function(point,i,points){
+        if(i===0)
+        return false;
+        else{
+
+          let style={opacity: (trail-i)/trail}
+          return(
+            <line pippo={trail-(trail-i)} key={"line"+i} x1={point.x} y1={point.y} x2={points[i-1].x} y2={points[i-1].y}  style={style}/>
+          )
+          
+        }
+      })
+
     }
     if(this.state.startLane.arrows)
     arrows=this.state.startLane.arrows.map(function(arrow,i) {
@@ -529,7 +544,8 @@ console.log(pointAndDir);
                 <g id="startLane">
                   {arrows}
                 </g>
-                <polyline id="polyline" points={polylinepoints}/>
+                {1===2&&<polyline id="polyline" points={polylinepoints}/>}
+                {lines}
               </DrawBoardSvg>
             }
             {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
