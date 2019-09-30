@@ -9,11 +9,24 @@ polyline{
   stroke: rgba(0, 0, 0, 0.5);
   stroke-width: 1;
 }
-
-#startLane polyline{
+line{
   fill: rgba(0, 0, 0, 0);
-  stroke: rgba(0, 140, 0, 0.5);
-  stroke-width: 4;
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 1;
+  }
+  circle{
+    fill: rgba(0, 0, 0, 0);
+    stroke: rgba(0, 0, 0, 0.5);
+    stroke-width: 1;
+    }
+#startLane
+{
+  polyline{
+    fill: rgba(0, 0, 0, 0);
+    stroke: rgba(0, 140, 0, 0.5);
+    stroke-width: 4;
+  }
+  
 }`;
 
 export default styledSvg;

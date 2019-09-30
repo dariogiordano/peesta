@@ -44,20 +44,6 @@ class DottedCanvas extends React.Component {
     return ((r << 16) | (g << 8) | b).toString(16);
   }
 
-  componentDidMount(){
-    this.canvas = this.canvasRef.current;
-    this.ctx = this.canvas.getContext('2d');
-    this.mouse = {x: 0, y: 0};
-    this.last_mouse = {x: 0, y: 0};
-    
-  }
-
- 
-
-  
-
-  
-  
   recursiveCleanGrid(grid){
     var needOneMore=false;
     grid.forEach((row,indexV)=>{
@@ -153,6 +139,12 @@ class DottedCanvas extends React.Component {
     });
   }
 
+  componentDidMount(){
+    this.canvas = this.canvasRef.current;
+    this.ctx = this.canvas.getContext('2d');
+    this.mouse = {x: 0, y: 0};
+    this.last_mouse = {x: 0, y: 0};  
+  }
 
   componentDidUpdate(){
     // prima fase di gioco: disegno della mappa;
@@ -179,17 +171,7 @@ class DottedCanvas extends React.Component {
         }.bind(this));
       }.bind(this));
     }
-    // terza fase di gioco: gara;
-    /**
-     * qui viene disegnato il nuovo punto non appena la mossa è conclusa.
-     */
-   else if(this.props.gameStage===3 && this.props.point.x && this.props.point.y && !this.props.isMoving){
-      this.ctx.lineWidth = 1;
-      this.ctx.beginPath();
-      this.ctx.strokeStyle = this.props.point.isCrash?"red":"rgba(50,50,250,0.7)";
-      this.ctx.arc(this.props.point.x,this.props.point.y, 4, 0, 2 * Math.PI);
-      this.ctx.stroke();
-    }
+    
   }
 
   render() {
