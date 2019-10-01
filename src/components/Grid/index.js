@@ -11,8 +11,9 @@ class Grid extends React.Component {
     /*setup*/
     this.gearMax=6
     this.cellSize=20
-    this.trackColor="#ffffee"
-    this.bgColor="#bbefef"
+    this.trackColor="#303740"
+    this.trailColor="#ffffff"
+    this.bgColor="#11914d"
     this.trailLength=14
     
     /*init*/
@@ -484,6 +485,7 @@ console.log(pointAndDir);
     var lines=[];
     var polylinepoints="";
     var trail=this.trailLength;
+    var trailColor=this.trailColor;
     if(this.state.points.length>0){
       let filtered=this.state.points.filter((point,i,points)=>i>=points.length-this.trailLength);
       filtered.forEach(function(point){
@@ -494,8 +496,8 @@ console.log(pointAndDir);
         return false;
         else{
           let style={}
-          style.stroke=point.isCrash?"red":"green";
-          style.strokeWidth=point.isCrash?3:1;
+          style.stroke=point.isCrash?"tomato":"aqua";
+          style.strokeWidth=point.isCrash?3:2;
           style.opacity=1/(i/2);
           if(point.isCrash || point.isMoved) return(
             <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
@@ -508,7 +510,7 @@ console.log(pointAndDir);
         return false;
         else{
 
-          let style={opacity: (trail-i)/trail}
+          let style={opacity: (trail-i)/trail,stroke:trailColor}
           return(
             <line pippo={trail-(trail-i)} key={"line"+i} x1={point.x} y1={point.y} x2={points[i-1].x} y2={points[i-1].y}  style={style}/>
           )

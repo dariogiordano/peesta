@@ -11,7 +11,7 @@ polyline{
 }
 line{
   fill: rgba(0, 0, 0, 0);
-  stroke: rgba(100, 100, 100, 1);
+  stroke: rgba(200, 200, 200, 1);
   stroke-width: 1;
 }
 circle{
@@ -23,10 +23,9 @@ circle{
 {
   polyline{
     fill: rgba(0, 0, 0, 0);
-    stroke: rgba(128, 0, 100, 0.7);
+    stroke: rgba(255, 200, 00, 1);
     stroke-width: 4;
-  }
-  
+  } 
 }`;
 
 export default styledSvg;

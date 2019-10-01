@@ -163,8 +163,8 @@ class DottedCanvas extends React.Component {
         gridPromise.then(function(result){
           for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
             for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
-              this.ctx.fillStyle = "#333333";
-              this.ctx.fillRect(w-1,h-1,1,1);
+              this.ctx.fillStyle = "#f0f0f0";
+              this.ctx.fillRect(w,h,1,1);
             }
           }
           this.props.onGridSet(result);
