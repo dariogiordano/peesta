@@ -13,7 +13,7 @@ class Grid extends React.Component {
     this.cellSize=20
     this.trackColor="#ffffee"
     this.bgColor="#bbefef"
-    this.trailLength=20
+    this.trailLength=14
     
     /*init*/
     this.state = {
@@ -495,7 +495,8 @@ console.log(pointAndDir);
         else{
           let style={}
           style.stroke=point.isCrash?"red":"green";
-          style.opacity=1/i;
+          style.strokeWidth=point.isCrash?3:1;
+          style.opacity=1/(i/2);
           if(point.isCrash || point.isMoved) return(
             <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
           )
