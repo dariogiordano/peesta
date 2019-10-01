@@ -15,7 +15,8 @@ class Grid extends React.Component {
     this.trailColor="#ffffff"
     this.bgColor="#11914d"
     this.trailLength=14
-    
+    this.raceLaps=2
+    this.currentLap=0
     /*init*/
     this.state = {
       isMoving:false,
@@ -46,11 +47,38 @@ class Grid extends React.Component {
     this.getCrashInfo=this.getCrashInfo.bind(this);
     this.isUTurn=this.isUTurn.bind(this);
     this.isOutOfRange=this.isOutOfRange.bind(this);
-    this.isInStartLane=this.isInStartLane.bind(this);
+    this.isPointInSegment=this.isPointInSegment.bind(this);
+  }
+
+  checkCutFinishLine(x,y,direction,gear){
+    var slPoints=this.state.startLane.points;
+    var points=this.getPointsOfSegment(x,y,direction,gear).reverse();
+  
+    var intersections=points.map((point,index)=>{
+      return this.isPointInSegment(point[0],point[1],slPoints)
+    });
+    
+    if(intersections.filter(int=> int===true).length===0 || this.state.points.length<=2) return "no cut";
+    if(intersections.filter(int=> int===true).length===1 && !this.isFinishLineDirection(direction)) return "wrong direction";
+    if(intersections.filter(int=> int===true).length===1 && intersections.indexOf(true)>0) return "one lap less to go" 
+    return "no cut"
+  }
+
+  isFinishLineDirection(dir){
+    switch(this.state.startLane.directionOfTravel){
+      case "O": return !(dir==="SE" || dir==="E"|| dir==="NE");
+      case "NO": return !(dir==="S" || dir==="SE"|| dir==="E");
+      case "N": return !(dir==="SO" || dir==="S"|| dir==="SE");
+      case "NE": return !(dir==="O" || dir==="SO"|| dir==="S");
+      case "E": return !(dir==="NO" || dir==="O"|| dir==="SO");
+      case "SE": return !(dir==="N" || dir==="NO"|| dir==="O");
+      case "S": return !(dir==="NE" || dir==="N"|| dir==="NO");
+      case "SO": return !(dir==="E" || dir==="NE"|| dir==="N");
+      default: return false;
+    }
   }
 
   isUTurn(lastDirection){
-    
     // siamo a inizio gara: in questo caso possiamo andare solo nel senso di marcia
     if (this.state.points.length===2){
       let dir=this.state.startLane.directionOfTravel;
@@ -228,8 +256,6 @@ class Grid extends React.Component {
     }
     else if(status!=="moved")
       points.push({x:newX,y:newY});
-    
-console.log(pointAndDir);
     //resituisco i punti passati dalla discretizzazione e la direzione di marcia
     return {points,direction,gear,isCrash:crashInfo.yesItIs};
   }
@@ -300,8 +326,8 @@ console.log(pointAndDir);
     var oppositeDirectionCohords=this.recursiveIsTrack(x,y,oppositeDirection,o);
     var gear=this.getGear(directionCohords[0],directionCohords[1],oppositeDirectionCohords[0],oppositeDirectionCohords[1])
     var points=this.getPointsOfSegment(oppositeDirectionCohords[0],oppositeDirectionCohords[1],direction,gear);
-    points=points.filter((point,i)=>i>0&&i<points.length-1);
-    var arrows=points.map(point => {
+    var arrowPoints=points.filter((point,i)=>i>0 && i<points.length-1);
+    var arrows=arrowPoints.map(point => {
       return this.getArrowFromPoint(point,direction)
     });
     return{
@@ -309,6 +335,7 @@ console.log(pointAndDir);
       x2:oppositeDirectionCohords[0],
       y1:directionCohords[1],
       y2:oppositeDirectionCohords[1],
+      arrowPoints,
       points,
       arrows,
       directionOfTravel:this.getPerpendicularDirection(direction)
@@ -331,13 +358,9 @@ console.log(pointAndDir);
     return Object.keys(startLane).length > 0 && valuesArray.indexOf(0) >= 0 && valuesArray.indexOf(2) >= 0
   }
 
-  isInStartLane(x,y){
-    var sl=this.state.startLane;
-    var pointInfo=this.getPointAndDir(sl.x1,sl.x2,sl.y1,sl.y2);
-    var slGear=this.getGear(sl.x2,sl.y2,sl.x1,sl.y1);
-    var slPoints=this.getPointsOfSegment(sl.x2,sl.y2,pointInfo.direction,slGear);
-    for (var i = 1; i < slPoints.length-1; i++) {
-      if (slPoints[i][0] === x && slPoints[i][1] ===y) {
+  isPointInSegment(x,y,segment){
+    for (var i = 0; i <= segment.length-1; i++) {
+      if (segment[i][0] === x && segment[i][1]===y) {
           return true;   // Found it
       }
     }
@@ -441,7 +464,7 @@ console.log(pointAndDir);
         this.lastPoint=[x,y];
         //segno il punto di partenza sulla linea di partenza
         
-        if(this.isInStartLane(x,y) && this.state.points.length===0){
+        if(this.isPointInSegment(x,y,this.state.startLane.arrowPoints) && this.state.points.length===0){
           this.setState(state=>({
             points:[{x,y}],
             isMoving:true
@@ -459,14 +482,16 @@ console.log(pointAndDir);
         if (moveDetails.points...
         points NON viene restituito da get Move Details in caso di ripartenza dopo un incidente verso un punto NON sulla pista 
         */
-      
-        if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) ){
+        var checkCutFinishLine=this.checkCutFinishLine(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.direction,this.getGear(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.points[moveDetails.points.length-2].x,moveDetails.points[moveDetails.points.length-2].y))
+         console.log(checkCutFinishLine);
+        if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) && checkCutFinishLine!=="wrong direction" ){
           this.directionHistory=moveDetails.direction;
+          this.currentLap=checkCutFinishLine==="one lap less to go"? this.currentLap+1: this.currentLap;
           this.setState(state=>({
             gear:moveDetails.isCrash?0:moveDetails.gear,
             isMoving:false,
-            points:moveDetails.points
-
+            points:moveDetails.points,
+            gameStage:this.currentLap===this.raceLaps?4:this.state.gameStage
           }));
         }  
       }
@@ -480,6 +505,10 @@ console.log(pointAndDir);
   }
 
   render() {
+    if(this.state.gameStage===4)
+    return(
+     <div>{this.state.points.length-1}</div> 
+    )
     var arrows =[];
     var circles=[];
     var lines=[];
@@ -498,7 +527,7 @@ console.log(pointAndDir);
           let style={}
           style.stroke=point.isCrash?"tomato":"aqua";
           style.strokeWidth=point.isCrash?3:2;
-          style.opacity=1/(i/2);
+          style.opacity=i>0?1/(i/2):1;
           if(point.isCrash || point.isMoved) return(
             <circle key={"circle"+i} cx={point.x} cy={point.y} r="4" style={style}/>
           )
@@ -509,7 +538,6 @@ console.log(pointAndDir);
         if(i===0)
         return false;
         else{
-
           let style={opacity: (trail-i)/trail,stroke:trailColor}
           return(
             <line pippo={trail-(trail-i)} key={"line"+i} x1={point.x} y1={point.y} x2={points[i-1].x} y2={points[i-1].y}  style={style}/>
