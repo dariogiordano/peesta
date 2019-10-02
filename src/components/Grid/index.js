@@ -52,16 +52,22 @@ class Grid extends React.Component {
 
   checkCutFinishLine(x,y,direction,gear){
     var slPoints=this.state.startLane.points;
+    var slDirection=this.state.startLane.directionOfTravel;
+    var cellSize=this.cellSize;
     var points=this.getPointsOfSegment(x,y,direction,gear).reverse();
-  
-    var intersections=points.map((point,index)=>{
-      return this.isPointInSegment(point[0],point[1],slPoints)
-    });
+    var intersections=[];
     
-    if(intersections.filter(int=> int===true).length===0 || this.state.points.length<=2) return "no cut";
-    if(intersections.filter(int=> int===true).length===1 && !this.isFinishLineDirection(direction)) return "wrong direction";
-    if(intersections.filter(int=> int===true).length===1 && intersections.indexOf(true)>0) return "one lap less to go" 
-    return "no cut"
+    if(slDirection==="O"||slDirection==="N"||slDirection==="E"||slDirection==="S"){
+      intersections=points.map(point=>this.isPointInSegment(point[0],point[1],slPoints));
+      if(intersections.filter(int=> int===true).length===0 || this.state.points.length<=2) return "no cut";
+      if(intersections.filter(int=> int===true).length===1 && !this.isFinishLineDirection(direction)) return "wrong direction";
+      if(intersections.filter(int=> int===true).length===1 && intersections.indexOf(true)>0) return "one lap less to go" 
+      return "no cut"
+    }else{
+      var Epoints=points.map(point=>[point[0]-cellSize,point[1]]);
+      var Opoints=points.map(point=>[point[0]+cellSize,point[1]]);
+      return "no cut"
+    }
   }
 
   isFinishLineDirection(dir){
