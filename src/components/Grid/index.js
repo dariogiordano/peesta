@@ -55,18 +55,61 @@ class Grid extends React.Component {
     var slDirection=this.state.startLane.directionOfTravel;
     var cellSize=this.cellSize;
     var points=this.getPointsOfSegment(x,y,direction,gear).reverse();
-    var intersections=[];
-    
-    if(slDirection==="O"||slDirection==="N"||slDirection==="E"||slDirection==="S"){
-      intersections=points.map(point=>this.isPointInSegment(point[0],point[1],slPoints));
-      if(intersections.filter(int=> int===true).length===0 || this.state.points.length<=2) return "no cut";
-      if(intersections.filter(int=> int===true).length===1 && !this.isFinishLineDirection(direction)) return "wrong direction";
-      if(intersections.filter(int=> int===true).length===1 && intersections.indexOf(true)>0) return "one lap less to go" 
-      return "no cut"
-    }else{
-      var Epoints=points.map(point=>[point[0]-cellSize,point[1]]);
-      var Opoints=points.map(point=>[point[0]+cellSize,point[1]]);
-      return "no cut"
+    var intersections=points.map(point=>this.isPointInSegment(point[0],point[1],slPoints));
+    var EIntersections=points.map(point=>[point[0]-cellSize,point[1]]).map(point=>this.isPointInSegment(point[0],point[1],slPoints));
+    var OIntersections=points.map(point=>[point[0]+cellSize,point[1]]).map(point=>this.isPointInSegment(point[0],point[1],slPoints));
+    var joinedIntersections=[];
+    switch (slDirection){
+      case "O":
+      case "S":
+      case "N":
+      case "E":
+        if(intersections.filter(int=> int===true).length===0 ||this.state.points.length<=2) return "no cut";
+        if(intersections.filter(int=> int===true).length>=1 && !this.isFinishLineDirection(direction)) return "wrong direction";
+        if(intersections.filter(int=> int===true).length===1 && intersections.indexOf(true)>0) return "one lap less to go" 
+        return "no cut"
+      case "SE":
+      case "NE":
+      case "SO":
+      case "NO":
+        if(
+          (
+            intersections.filter(int=> int===true).length===0
+            &&
+            EIntersections.filter(int=> int===true).length===0
+            &&
+            OIntersections.filter(int=> int===true).length===0
+          )
+          ||
+          this.state.points.length<=2
+        ) return "no cut";
+        
+        if(this.isFinishLineDirection(direction)){
+          var secondIntersection =(slDirection==="SE"||slDirection==="NE")?OIntersections:EIntersections;
+          if(
+            (
+              intersections.filter(int=> int===true).length===1
+              &&
+              intersections.indexOf(true)>0
+            )
+            || 
+            (
+              secondIntersection.filter(int=> int===true).length===1
+              &&
+              secondIntersection.indexOf(true)>0
+              &&
+              intersections[0]!==true//verifico che la partenza del giro successivo non avvenga esattamente dalla linea di partenza
+
+            )
+            
+           ) return "one lap less to go" 
+        }
+        else{
+          joinedIntersections =(slDirection==="SE"||slDirection==="NE")?[...intersections,...EIntersections]:[...intersections,...OIntersections];
+          if(joinedIntersections.filter(int=> int===true).length>=1) return "wrong direction";
+        }
+        return "no cut";
+      default: return "no cut";        
     }
   }
 
@@ -103,6 +146,7 @@ class Grid extends React.Component {
     // siamo dopo un incidente (gear=0): in questo caso possiamo andare dove vogliamo
     if (this.state.gear===0)
       return false;
+    //caso di mossa normale
     switch(lastDirection){
       case "O": return this.directionHistory==="E";
       case "NO": return this.directionHistory==="SE";
@@ -152,7 +196,6 @@ class Grid extends React.Component {
     else
       gear=Math.round(ipo/this.cellSize);
     return gear;
-
   }
 
   getPointAndDir(prevX,x,prevY,y){
@@ -488,8 +531,10 @@ class Grid extends React.Component {
         if (moveDetails.points...
         points NON viene restituito da get Move Details in caso di ripartenza dopo un incidente verso un punto NON sulla pista 
         */
-        var checkCutFinishLine=this.checkCutFinishLine(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.direction,this.getGear(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.points[moveDetails.points.length-2].x,moveDetails.points[moveDetails.points.length-2].y))
-         console.log(checkCutFinishLine);
+        if (moveDetails.points){
+          var checkCutFinishLine=this.checkCutFinishLine(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.direction,this.getGear(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.points[moveDetails.points.length-2].x,moveDetails.points[moveDetails.points.length-2].y))
+          console.log(checkCutFinishLine);
+        }
         if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) && checkCutFinishLine!=="wrong direction" ){
           this.directionHistory=moveDetails.direction;
           this.currentLap=checkCutFinishLine==="one lap less to go"? this.currentLap+1: this.currentLap;
