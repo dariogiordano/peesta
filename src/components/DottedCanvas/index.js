@@ -154,7 +154,7 @@ class DottedCanvas extends React.Component {
       this.ctx.lineWidth = this.props.cellSize*3;
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
-      this.ctx.strokeStyle = this.props.trackColor;
+      this.ctx.strokeStyle = this.props.brushColor;
     } 
     // seconda fase di gioco: disegno della griglia e della linea di partenza;
     else if(this.props.gameStage===1 ){

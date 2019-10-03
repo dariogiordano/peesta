@@ -14,6 +14,7 @@ class Grid extends React.Component {
     this.trackColor="#303740"
     this.trailColor="#ffffff"
     this.bgColor="#11914d"
+
     this.trailLength=14
     this.currentLap=0
     /*init*/
@@ -28,7 +29,8 @@ class Grid extends React.Component {
       dimensions:[100,100],
       gameStage:0,
       gear:0,
-    alertMsg:""
+      alertMsg:"",
+      brushColor:this.trackColor
     };
    
     this.lastPoint=[];
@@ -459,6 +461,12 @@ class Grid extends React.Component {
       alertMsg:""
     }));
   }
+
+  onChangeColor(color){
+    this.setState(state=>({
+      brushColor:color
+    }));
+  }
  
   handleMove(event){
     const x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
@@ -615,6 +623,7 @@ class Grid extends React.Component {
               width={this.state.dimensions[0]}
               height={this.state.dimensions[1]}
               onGridSet={this.onGridSet}
+              brushColor={this.state.brushColor}
             />
             {this.state.gameStage>0 &&
               <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
@@ -634,6 +643,7 @@ class Grid extends React.Component {
           bgColor={this.bgColor}              
           cellSize={this.cellSize}
           onButtonClick={this.onChangeGameStage}
+          onchangeColor={this.onChangeColor}
           gear={this.state.gear}
           raceLaps={this.state.raceLaps}
           currentLap={this.currentLap}
