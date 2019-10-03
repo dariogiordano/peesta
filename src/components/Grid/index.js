@@ -38,16 +38,6 @@ class Grid extends React.Component {
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
-    this.getStartLane=this.getStartLane.bind(this);
-    this.getNewPointFromGear=this.getNewPointFromGear.bind(this);
-    this.getGridValue=this.getGridValue.bind(this);
-    this.isValidStartLane=this.isValidStartLane.bind(this);
-    this.getPointsOfSegment=this.getPointsOfSegment.bind(this);
-    this.getGridValuesOfSegment=this.getGridValuesOfSegment.bind(this);
-    this.getCrashInfo=this.getCrashInfo.bind(this);
-    this.isUTurn=this.isUTurn.bind(this);
-    this.isOutOfRange=this.isOutOfRange.bind(this);
-    this.isPointInSegment=this.isPointInSegment.bind(this);
   }
 
   checkCutFinishLine(x,y,direction,gear){
@@ -103,8 +93,7 @@ class Grid extends React.Component {
             )
             
            ) return "one lap less to go" 
-        }
-        else{
+        }else{
           joinedIntersections =(slDirection==="SE"||slDirection==="NE")?[...intersections,...EIntersections]:[...intersections,...OIntersections];
           if(joinedIntersections.filter(int=> int===true).length>=1) return "wrong direction";
         }
@@ -177,14 +166,6 @@ class Grid extends React.Component {
   getGridValuesOfSegment(x,y,direction,gear){
     let points=this.getPointsOfSegment(x,y,direction,gear);
     return points.map(point=>this.getGridValue(point[0],point[1]));
-  }
-
-  onChangeGameStage(){
-    let gameStage=this.state.gameStage+1;
-    this.setState(state=>({
-      loading:gameStage===1,
-      gameStage
-    }));
   }
 
   getGear(x1,y1,x2,y2){
@@ -291,11 +272,16 @@ class Grid extends React.Component {
       }
     }
     var gear=this.getGear(prevX,prevY,newX,newY),
-    crashInfo=this.getCrashInfo(newX,newY,direction,gear);
-    
+    crashInfo=this.getCrashInfo(newX,newY,direction,gear),
+    finishLineInfo=this.checkCutFinishLine(newX,newY,direction,gear);
+    //se c'è un last good point vuold ire che l'incidente è avvenuto e non è una ripartenza da un incidente
     if(status==="moved" && crashInfo.yesItIs && crashInfo.lastGoodPoint){
       points=points.filter((p,i)=>i<points.length-1);
-      points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true});
+      if(finishLineInfo==="one lap less to go" && this.currentLap===this.raceLaps-1){
+        alert("OMG! you crashed on finish line!!!")
+        points[points.length-1].isCrash=true; 
+        finishLineInfo="no cut"
+      }else points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true});
 
     }else if(status==="moved" && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
       points=null;  
@@ -306,16 +292,7 @@ class Grid extends React.Component {
     else if(status!=="moved")
       points.push({x:newX,y:newY});
     //resituisco i punti passati dalla discretizzazione e la direzione di marcia
-    return {points,direction,gear,isCrash:crashInfo.yesItIs};
-  }
-
-  onGridSet(grid){
-      this.setState(state=>({
-        loading:false,
-        gameStage:2,
-        grid,
-        isMoving:false
-      }));
+    return {points,direction,gear,isCrash:crashInfo.yesItIs,finishLineInfo};
   }
 
   getOppositeDirection(dir){
@@ -370,9 +347,9 @@ class Grid extends React.Component {
   
   getStartLane(direction){
     var i=1,o=1,x=this.state.startLaneStart.x,y=this.state.startLaneStart.y;
-    var directionCohords=this.recursiveIsTrack(x,y,direction,i)
+    var directionCohords=this.isTrackRecursive(x,y,direction,i)
     var oppositeDirection=this.getOppositeDirection(direction);
-    var oppositeDirectionCohords=this.recursiveIsTrack(x,y,oppositeDirection,o);
+    var oppositeDirectionCohords=this.isTrackRecursive(x,y,oppositeDirection,o);
     var gear=this.getGear(directionCohords[0],directionCohords[1],oppositeDirectionCohords[0],oppositeDirectionCohords[1])
     var points=this.getPointsOfSegment(oppositeDirectionCohords[0],oppositeDirectionCohords[1],direction,gear);
     var arrowPoints=points.filter((point,i)=>i>0 && i<points.length-1);
@@ -391,14 +368,14 @@ class Grid extends React.Component {
     }
   }
 
-  recursiveIsTrack(xStart,yStart,direction,i){
+  isTrackRecursive(xStart,yStart,direction,i){
     var p = this.getNewPointFromGear(xStart,yStart,direction,i);
     var pValue=this.state.grid[((p[1]-this.cellSize)/this.cellSize)][(p[0]-this.cellSize)/this.cellSize];
     if(pValue===0||pValue===2){
       return [p[0],p[1]];
     }else{
       i++
-      return this.recursiveIsTrack(xStart,yStart,direction,i)
+      return this.isTrackRecursive(xStart,yStart,direction,i)
     }
   }
 
@@ -409,16 +386,15 @@ class Grid extends React.Component {
 
   isPointInSegment(x,y,segment){
     for (var i = 0; i <= segment.length-1; i++) {
-      if (segment[i][0] === x && segment[i][1]===y) {
-          return true;   // Found it
-      }
+      if (segment[i][0] === x && segment[i][1]===y) 
+        return true; // Found it 
     }
-    return false;   // Not found
+    return false; // Not found
   }
 
   getNewPointFromGear(x,y,direction,gear){
-    var newX;
-    var newY;
+    let newX;
+    let newY;
     x=parseInt(x);
     y=parseInt(y);
     let size=parseInt(this.cellSize*gear)
@@ -451,29 +427,44 @@ class Grid extends React.Component {
   }
 
   getCrashInfo(x,y,direction,gear){
-    var points=this.getPointsOfSegment(x,y,direction,gear);
-    var gridValues=this.getGridValuesOfSegment(x,y,direction,gear);
+    let points=this.getPointsOfSegment(x,y,direction,gear);
+    let gridValues=this.getGridValuesOfSegment(x,y,direction,gear);
     let redPoints=gridValues.filter(point=>point!==1);
     let lastGoodPoint=null;
     /*se non trovo mai il colore della pista,
     vuol dire che sto partendo dallo sfondo verso lo sfondo.
     quindi non valorizzo il punto di ripartenza per bloccare la mossa */
     if(gridValues.indexOf(1)!==-1){
-    var index = gridValues.lastIndexOf(0)!==-1?gridValues.lastIndexOf(0):gridValues.lastIndexOf(2);
+      let index = gridValues.lastIndexOf(0)!==-1?gridValues.lastIndexOf(0):gridValues.lastIndexOf(2);
       lastGoodPoint=points[index];
     }
     return {yesItIs:gear>0 && (redPoints.length>2 || gridValues[0]!==1),lastGoodPoint};
   }
+
+  onChangeGameStage(){
+    let gameStage=this.state.gameStage+1;
+    this.setState(state=>({
+      loading:gameStage===1,
+      gameStage
+    }));
+  }
+
+  onGridSet(grid){
+    this.setState(state=>({
+      loading:false,
+      gameStage:2,
+      grid,
+      isMoving:false
+    }));
+  }
  
   handleMove(event){
-    var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
-    var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
-    
+    const x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
+    const y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     if(this.state.isMoving && !(event.clientX>=this.lastPoint[0]-(this.cellSize/2) && event.clientX<this.lastPoint[0]+(this.cellSize/2) && event.clientY>=this.lastPoint[1]-(this.cellSize/2) && event.clientY<this.lastPoint[1]+(this.cellSize/2))){
       this.lastPoint=[x,y];  
       if(this.state.gameStage===2){
         var pointAndDir=this.getPointAndDir(this.state.startLaneStart.x,x,this.state.startLaneStart.y,y);
-     
         this.setState(state=>({
           startLane:this.getStartLane(pointAndDir.direction)
         }));
@@ -486,8 +477,8 @@ class Grid extends React.Component {
   }
 
   handleClick(event){
-    var x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize; 
-    var y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
+    const x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize; 
+    const y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     //disegno della start lane
     if(this.state.gameStage===2){
       if(!this.state.isMoving){
@@ -526,18 +517,14 @@ class Grid extends React.Component {
           }));
         }else alert("click a point on start lane to start");
       } else {
-        var moveDetails=this.getMoveDetails(x,y,"moved");
+        const moveDetails=this.getMoveDetails(x,y,"moved");
         /*
         if (moveDetails.points...
         points NON viene restituito da get Move Details in caso di ripartenza dopo un incidente verso un punto NON sulla pista 
         */
-        if (moveDetails.points){
-          var checkCutFinishLine=this.checkCutFinishLine(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.direction,this.getGear(moveDetails.points[moveDetails.points.length-1].x,moveDetails.points[moveDetails.points.length-1].y,moveDetails.points[moveDetails.points.length-2].x,moveDetails.points[moveDetails.points.length-2].y))
-          console.log(checkCutFinishLine);
-        }
-        if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) && checkCutFinishLine!=="wrong direction" ){
+        if (moveDetails.points && !this.isOutOfRange(moveDetails.points) && !this.isUTurn(moveDetails.direction) && moveDetails.finishLineInfo!=="wrong direction" ){
           this.directionHistory=moveDetails.direction;
-          this.currentLap=checkCutFinishLine==="one lap less to go"? this.currentLap+1: this.currentLap;
+          this.currentLap=moveDetails.finishLineInfo==="one lap less to go"? this.currentLap+1: this.currentLap;
           this.setState(state=>({
             gear:moveDetails.isCrash?0:moveDetails.gear,
             isMoving:false,
@@ -558,19 +545,15 @@ class Grid extends React.Component {
   render() {
     if(this.state.gameStage===4)
     return(
-     <div>{this.state.points.length-1}</div> 
+     <div>hai impiegato {this.state.points.length-1} mosse </div> 
     )
     var arrows =[];
     var circles=[];
     var lines=[];
-    var polylinepoints="";
     var trail=this.trailLength;
     var trailColor=this.trailColor;
     if(this.state.points.length>0){
       let filtered=this.state.points.filter((point,i,points)=>i>=points.length-this.trailLength);
-      filtered.forEach(function(point){
-        polylinepoints+=point.x+(",")+point.y+" ";
-      });
       circles=filtered.reverse().map(function(point,i,a){
         if(i===a.length-1)
         return false;
@@ -596,7 +579,6 @@ class Grid extends React.Component {
           
         }
       })
-
     }
     if(this.state.startLane.arrows)
     arrows=this.state.startLane.arrows.map(function(arrow,i) {
@@ -606,7 +588,8 @@ class Grid extends React.Component {
     });
 
     return (
-      <div> <Loader isLoading={this.state.loading}></Loader>
+      <div>
+        <Loader isLoading={this.state.loading}></Loader>
         <StyledGrid onClick={this.handleClick} onMouseMove={this.handleMove}>  
           <div>
             <DottedCanvas
@@ -614,23 +597,22 @@ class Grid extends React.Component {
               trackColor={this.trackColor}
               bgColor={this.bgColor}              
               cellSize={this.cellSize}
-              gear={this.state.gear}
-              isMoving={this.state.isMoving}
               width={this.state.dimensions[0]}
               height={this.state.dimensions[1]}
               onGridSet={this.onGridSet}
             />
             {this.state.gameStage>0 &&
               <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
-                {circles}
                 <g id="startLane">
                   {arrows}
                 </g>
-                {1===2&&<polyline id="polyline" points={polylinepoints}/>}
+                {circles}
                 {lines}
               </DrawBoardSvg>
             }
-            {this.state.gameStage<3 && <Button onButtonClick={this.onChangeGameStage} text="fatto" />}
+            {this.state.gameStage<3 && 
+              <Button onButtonClick={this.onChangeGameStage} text="fatto" />
+            }
           </div>
         </StyledGrid>
         </div>
