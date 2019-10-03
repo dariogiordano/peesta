@@ -1,8 +1,8 @@
 import React from "react";
-import Button from "components/Button";
 import Loader from "components/Loader";
 import DrawBoardSvg from "components/DrawBoardSvg";
 import DottedCanvas from "components/DottedCanvas";
+import Dashboard from "components/Dashboard";
 import StyledGrid from "./styled";
 
 class Grid extends React.Component {
@@ -15,10 +15,10 @@ class Grid extends React.Component {
     this.trailColor="#ffffff"
     this.bgColor="#11914d"
     this.trailLength=14
-    this.raceLaps=2
     this.currentLap=0
     /*init*/
     this.state = {
+      raceLaps:2,
       isMoving:false,
       startLaneStart:{},
       startLane:{},
@@ -27,7 +27,8 @@ class Grid extends React.Component {
       points:[],
       dimensions:[100,100],
       gameStage:0,
-      gear:0
+      gear:0,
+    alertMsg:""
     };
    
     this.lastPoint=[];
@@ -277,10 +278,9 @@ class Grid extends React.Component {
     //se c'è un last good point vuold ire che l'incidente è avvenuto e non è una ripartenza da un incidente
     if(status==="moved" && crashInfo.yesItIs && crashInfo.lastGoodPoint){
       points=points.filter((p,i)=>i<points.length-1);
-      if(finishLineInfo==="one lap less to go" && this.currentLap===this.raceLaps-1){
-        alert("OMG! you crashed on finish line!!!")
+      if(finishLineInfo==="one lap less to go" && this.currentLap===this.state.raceLaps-1){
         points[points.length-1].isCrash=true; 
-        finishLineInfo="no cut"
+        finishLineInfo="incident at cut line"
       }else points.push({x:crashInfo.lastGoodPoint[0],y:crashInfo.lastGoodPoint[1],isCrash:true});
 
     }else if(status==="moved" && crashInfo.yesItIs && !crashInfo.lastGoodPoint){
@@ -445,7 +445,8 @@ class Grid extends React.Component {
     let gameStage=this.state.gameStage+1;
     this.setState(state=>({
       loading:gameStage===1,
-      gameStage
+      gameStage,
+      alertMsg:""
     }));
   }
 
@@ -454,7 +455,8 @@ class Grid extends React.Component {
       loading:false,
       gameStage:2,
       grid,
-      isMoving:false
+      isMoving:false,
+      alertMsg:""
     }));
   }
  
@@ -487,15 +489,19 @@ class Grid extends React.Component {
           this.setState(state=>({
             startLane:{},
             startLaneStart:{x,y},
-            isMoving:true
+            isMoving:true,
+            alertMsg:""
           }));
-          else alert("click a point on the track to draw the start lane.");
+        else 
+          this.setState(state=>({
+            alertMsg:"click a point on the track to draw the start lane."
+          }));
       }else if(this.isValidStartLane(this.state.startLane)) {
         this.setState(state=>({
-          isMoving:false
+          isMoving:false,
+          alertMsg:""
         }));
-      }
-      
+      } 
     }else if(this.state.gameStage===3){
       if(!this.state.isMoving) {
         //registro lastPoint per attivare il sistema che evita
@@ -507,15 +513,23 @@ class Grid extends React.Component {
         if(this.isPointInSegment(x,y,this.state.startLane.arrowPoints) && this.state.points.length===0){
           this.setState(state=>({
             points:[{x,y}],
-            isMoving:true
+            isMoving:true,
+            alertMsg:""
           }));
         }
         else if(this.state.points.length>0){
           this.setState(state=>({
             isMoving:true,
-            points:this.getMoveDetails(x,y,"start").points
+            points:this.getMoveDetails(x,y,"start").points,
+            alertMsg:""
           }));
-        }else alert("click a point on start lane to start");
+        }else{
+
+          this.setState(state=>({
+
+            alertMsg:"Click on a point on start lane to start"
+          }));
+        } 
       } else {
         const moveDetails=this.getMoveDetails(x,y,"moved");
         /*
@@ -529,7 +543,8 @@ class Grid extends React.Component {
             gear:moveDetails.isCrash?0:moveDetails.gear,
             isMoving:false,
             points:moveDetails.points,
-            gameStage:this.currentLap===this.raceLaps?4:this.state.gameStage
+            gameStage:this.currentLap===this.state.raceLaps?4:this.state.gameStage,
+            alertMsg:moveDetails.finishLineInfo==="incident at cut line"?"OMG! you crashed on finish line!!!":""
           }));
         }  
       }
@@ -538,7 +553,7 @@ class Grid extends React.Component {
 
   componentDidMount() {
     this.setState(state=>({
-      dimensions:[Math.floor((window.innerWidth)/this.cellSize)*this.cellSize,Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
+      dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize)-180,Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
     }))
   }
 
@@ -610,11 +625,20 @@ class Grid extends React.Component {
                 {lines}
               </DrawBoardSvg>
             }
-            {this.state.gameStage<3 && 
-              <Button onButtonClick={this.onChangeGameStage} text="fatto" />
-            }
+            
           </div>
         </StyledGrid>
+        <Dashboard
+          gameStage={this.state.gameStage}
+          trackColor={this.trackColor}
+          bgColor={this.bgColor}              
+          cellSize={this.cellSize}
+          onButtonClick={this.onChangeGameStage}
+          gear={this.state.gear}
+          raceLaps={this.state.raceLaps}
+          currentLap={this.currentLap}
+          alertMsg={this.state.alertMsg}
+        />
         </div>
     );
   }

@@ -61,7 +61,7 @@ class DottedCanvas extends React.Component {
           if (indexH<row.length-1 && row[indexH+1]===0){
             needOneMore=true;
             for (let e=indexH; e>0; e--){       
-              if (row[e]===2)  row.splice(e,1,0); 
+              if (row[e]===2) row.splice(e,1,0); 
               else break;
             }
           }
@@ -101,7 +101,7 @@ class DottedCanvas extends React.Component {
         }
         grid.push(row);
       }
-
+      //trovo tutti i punti della griglia interni alla pista
       grid=grid.map((row,indexV)=>{
         row=row.map((cell,indexH)=>{
           if(cell===0){
@@ -132,7 +132,7 @@ class DottedCanvas extends React.Component {
         return row
       });
     
-      //elimino eventuali 2 lasciati nei sottosquadra
+      //elimino eventuali 2 lasciati nei sottosquadra fuori dalla pista nel passaggio precedente
       
       grid=this.recursiveCleanGrid(grid);
       resolve(grid)
