@@ -9,6 +9,7 @@ class Dashboard extends React.Component {
     this.buttonClick=this.buttonClick.bind(this);
     this.changeColor=this.changeColor.bind(this);
     this.changeCursor=this.changeCursor.bind(this);
+    this.state={overClass:""};
   }
 
   changeColor(color){
@@ -19,13 +20,20 @@ class Dashboard extends React.Component {
     this.props.onChangeCursor(size);
   }
 
+  static getDerivedStateFromProps(props,state){
+    if(props.alertMsg!==""){
+      return{overClass: "over"};
+    } 
+    return {overClass: ""}
+  }
+
   buttonClick(){
-console.log(this.props)
     this.props.onChangeGameStage();
   }
+  
   render() {
     return (
-      <StyledDiv>
+      <StyledDiv className={this.state.overClass}>
         <div>{this.props.alertMsg}</div>
         {this.props.gameStage<3 && 
           <div>

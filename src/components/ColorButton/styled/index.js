@@ -8,7 +8,14 @@ background-color:${props => props.color};
 margin:10px;
 display:inline-block;
 border:3px solid white;
+transition-timing-function: ease-out;
+transition: border 500ms;
 &.selected{border:3px solid tomato}
+&.selected:hover{border:3px solid tomato}
+&:hover{
+    cursor: pointer;
+    border:3px solid #cccccc;
+}
 `;
 
 export default StyledButton;

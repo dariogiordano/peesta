@@ -563,7 +563,7 @@ class Grid extends React.Component {
 
   componentDidMount() {
     this.setState(state=>({
-      dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize)-180,Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
+      dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize),Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
     }))
   }
   componentDidUpdate() {
@@ -618,47 +618,45 @@ class Grid extends React.Component {
       );
     });
 
-    return (
-      <div>
+    return (      
+      <StyledGrid onClick={this.handleClick} onMouseMove={this.handleMove} width={this.state.dimensions[0]}>
         <Loader isLoading={this.state.loading}></Loader>
-        <StyledGrid onClick={this.handleClick} onMouseMove={this.handleMove}>  
-          <div>
-            <DottedCanvas
-              gameStage={this.state.gameStage}
-              trackColor={this.trackColor}
-              bgColor={this.bgColor}              
-              cellSize={this.cellSize}
-              width={this.state.dimensions[0]}
-              height={this.state.dimensions[1]}
-              onGridSet={this.onGridSet}
-              brushColor={this.state.brushColor}
-            />
-            {this.state.gameStage>1 &&
-              <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
-                <g id="startLane">
-                  {arrows}
-                </g>
-                {circles}
-                {lines}
-              </DrawBoardSvg>
-            }
-            
-          </div>
-        </StyledGrid>
-        <Dashboard
-          gameStage={this.state.gameStage}
-          trackColor={this.trackColor}
-          bgColor={this.bgColor}              
-          cellSize={this.cellSize}
-          onChangeGameStage={this.onChangeGameStage}
-          onChangeColor={this.onChangeColor}
-          gear={this.state.gear}
-          raceLaps={this.state.raceLaps}
-          currentLap={this.currentLap}
-          alertMsg={this.state.alertMsg}
-          brushColor={this.state.brushColor}
-        />
+        <div className="inner">
+          <DottedCanvas
+            gameStage={this.state.gameStage}
+            trackColor={this.trackColor}
+            bgColor={this.bgColor}              
+            cellSize={this.cellSize}
+            width={this.state.dimensions[0]}
+            height={this.state.dimensions[1]}
+            onGridSet={this.onGridSet}
+            brushColor={this.state.brushColor}
+          />
+          {this.state.gameStage>1 &&
+            <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
+              <g id="startLane">
+                {arrows}
+              </g>
+              {circles}
+              {lines}
+            </DrawBoardSvg>
+          }
+          
         </div>
+        <Dashboard
+        gameStage={this.state.gameStage}
+        trackColor={this.trackColor}
+        bgColor={this.bgColor}              
+        cellSize={this.cellSize}
+        onChangeGameStage={this.onChangeGameStage}
+        onChangeColor={this.onChangeColor}
+        gear={this.state.gear}
+        raceLaps={this.state.raceLaps}
+        currentLap={this.currentLap}
+        alertMsg={this.state.alertMsg}
+        brushColor={this.state.brushColor}
+      />
+      </StyledGrid>
     );
   }
 }
