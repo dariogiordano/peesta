@@ -22,7 +22,7 @@ class DottedCanvas extends React.Component {
   }
 
   handleMouseMove(e){
-    if(this.props.gameStage===0){
+    if(this.props.gameStage===1){
       this.last_mouse.x = this.mouse.x;
       this.last_mouse.y = this.mouse.y;
       this.mouse.x = e.pageX;
@@ -121,9 +121,7 @@ class DottedCanvas extends React.Component {
             for (let o=indexH; o<=row.length-1; o++){
               if (row[o]===1) counterO++;
             }
-           
             if(counterN>0 && counterS>0 && counterE>0 && counterO>0 ){
-              
               return 2;
             }
           }
@@ -143,21 +141,26 @@ class DottedCanvas extends React.Component {
     this.canvas = this.canvasRef.current;
     this.ctx = this.canvas.getContext('2d');
     this.mouse = {x: 0, y: 0};
-    this.last_mouse = {x: 0, y: 0};  
+    this.last_mouse = {x: 0, y: 0};
+    
   }
 
   componentDidUpdate(){
     // prima fase di gioco: disegno della mappa;
     if(this.props.gameStage===0){
+      console.log(this.props.gameStage)
       this.ctx.fillStyle = this.props.bgColor;
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    if(this.props.gameStage===1){
+      console.log(this.props.brushColor)
       this.ctx.lineWidth = this.props.cellSize*3;
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.brushColor;
     } 
     // seconda fase di gioco: disegno della griglia e della linea di partenza;
-    else if(this.props.gameStage===1 ){
+    else if(this.props.gameStage===2 ){
       setTimeout(function(){
         let gridPromise=this.getGrid();
         gridPromise.then(function(result){

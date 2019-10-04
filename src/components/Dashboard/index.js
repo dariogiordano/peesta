@@ -1,40 +1,49 @@
 import React from "react";
 import StyledDiv from "./styled";
 import Button from "components/Button";
+import Slider from "components/Slider";
+import ColorButton from "components/ColorButton"
 class Dashboard extends React.Component {
   constructor(props) {
     super(props);
-    this.onButtonClick=this.onButtonClick.bind(this);
+    this.buttonClick=this.buttonClick.bind(this);
     this.changeColor=this.changeColor.bind(this);
+    this.changeCursor=this.changeCursor.bind(this);
   }
 
-  changeColor(){
-    this.props.onColorChange();
+  changeColor(color){
+    this.props.onChangeColor(color);
   }
 
-  onButtonClick(){
-    this.props.onchangeColor();
+  changeCursor(size){
+    this.props.onChangeCursor(size);
+  }
+
+  buttonClick(){
+console.log(this.props)
+    this.props.onChangeGameStage();
   }
   render() {
     return (
       <StyledDiv>
-        {this.props.gameStage<3 && 
-        <>
-        <Button onButtonClick={this.changeColor(this.props.bgColor)} text="cambia colore pennello" />
-        <Button onButtonClick={this.changeColor(this.props.trackColor)} text="cambia colore pennello" />
-        </>
-      }
         <div>{this.props.alertMsg}</div>
-      {this.props.gameStage<3 && 
-        <Button onButtonClick={this.onButtonClick} text="fatto" />
-      }
-       {this.props.gameStage===3 && 
-       <div>
-        <div>LAP: {this.props.currentLap+1}/{this.props.raceLaps}</div>
-        <div>GEAR: {this.props.gear}</div>
-
-       </div>
-      }
+        {this.props.gameStage<3 && 
+          <div>
+            <ColorButton onButtonClick={this.changeColor} brushColor={this.props.brushColor} color={this.props.trackColor} />
+            <ColorButton onButtonClick={this.changeColor} brushColor={this.props.brushColor} color={this.props.bgColor} />
+            <Slider></Slider>
+          </div>
+        }
+        
+        {this.props.gameStage<4 && 
+          <Button onButtonClick={this.buttonClick} text="fatto" />
+        }
+        {this.props.gameStage===4 && 
+          <div>
+            <div>LAP: {this.props.currentLap+1}/{this.props.raceLaps}</div>
+            <div>GEAR: {this.props.gear}</div>
+          </div>
+        }
       </StyledDiv>
     );
   }

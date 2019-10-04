@@ -41,6 +41,7 @@ class Grid extends React.Component {
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
+    this.onChangeColor=this.onChangeColor.bind(this)
   }
 
   checkCutFinishLine(x,y,direction,gear){
@@ -446,7 +447,7 @@ class Grid extends React.Component {
   onChangeGameStage(){
     let gameStage=this.state.gameStage+1;
     this.setState(state=>({
-      loading:gameStage===1,
+      loading:gameStage===2,
       gameStage,
       alertMsg:""
     }));
@@ -455,7 +456,7 @@ class Grid extends React.Component {
   onGridSet(grid){
     this.setState(state=>({
       loading:false,
-      gameStage:2,
+      gameStage:3,
       grid,
       isMoving:false,
       alertMsg:""
@@ -463,6 +464,7 @@ class Grid extends React.Component {
   }
 
   onChangeColor(color){
+    console.log(color);
     this.setState(state=>({
       brushColor:color
     }));
@@ -473,12 +475,12 @@ class Grid extends React.Component {
     const y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     if(this.state.isMoving && !(event.clientX>=this.lastPoint[0]-(this.cellSize/2) && event.clientX<this.lastPoint[0]+(this.cellSize/2) && event.clientY>=this.lastPoint[1]-(this.cellSize/2) && event.clientY<this.lastPoint[1]+(this.cellSize/2))){
       this.lastPoint=[x,y];  
-      if(this.state.gameStage===2){
+      if(this.state.gameStage===3){
         var pointAndDir=this.getPointAndDir(this.state.startLaneStart.x,x,this.state.startLaneStart.y,y);
         this.setState(state=>({
           startLane:this.getStartLane(pointAndDir.direction)
         }));
-      }else if(this.state.gameStage===3){
+      }else if(this.state.gameStage===4){
         this.setState(state=>({
           points:this.getMoveDetails(x,y,"moving").points
         }));
@@ -490,7 +492,7 @@ class Grid extends React.Component {
     const x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize; 
     const y =Math.floor((event.clientY+(this.cellSize/2))/this.cellSize)*this.cellSize;
     //disegno della start lane
-    if(this.state.gameStage===2){
+    if(this.state.gameStage===3){
       if(!this.state.isMoving){
         this.lastPoint=[x,y];
         if(this.getGridValue(x,y)===1)
@@ -510,7 +512,7 @@ class Grid extends React.Component {
           alertMsg:""
         }));
       } 
-    }else if(this.state.gameStage===3){
+    }else if(this.state.gameStage===4){
       if(!this.state.isMoving) {
         //registro lastPoint per attivare il sistema che evita
         //la ripetizione dell'evento in caso di movimento
@@ -551,7 +553,7 @@ class Grid extends React.Component {
             gear:moveDetails.isCrash?0:moveDetails.gear,
             isMoving:false,
             points:moveDetails.points,
-            gameStage:this.currentLap===this.state.raceLaps?4:this.state.gameStage,
+            gameStage:this.currentLap===this.state.raceLaps?5:this.state.gameStage,
             alertMsg:moveDetails.finishLineInfo==="incident at cut line"?"OMG! you crashed on finish line!!!":""
           }));
         }  
@@ -564,9 +566,15 @@ class Grid extends React.Component {
       dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize)-180,Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
     }))
   }
+  componentDidUpdate() {
+    if(this.state.gameStage===0)
+    this.setState(state=>({
+      gameStage:1
+    }))
+  }
 
   render() {
-    if(this.state.gameStage===4)
+    if(this.state.gameStage===5)
     return(
      <div>hai impiegato {this.state.points.length-1} mosse </div> 
     )
@@ -625,7 +633,7 @@ class Grid extends React.Component {
               onGridSet={this.onGridSet}
               brushColor={this.state.brushColor}
             />
-            {this.state.gameStage>0 &&
+            {this.state.gameStage>1 &&
               <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
                 <g id="startLane">
                   {arrows}
@@ -642,12 +650,13 @@ class Grid extends React.Component {
           trackColor={this.trackColor}
           bgColor={this.bgColor}              
           cellSize={this.cellSize}
-          onButtonClick={this.onChangeGameStage}
-          onchangeColor={this.onChangeColor}
+          onChangeGameStage={this.onChangeGameStage}
+          onChangeColor={this.onChangeColor}
           gear={this.state.gear}
           raceLaps={this.state.raceLaps}
           currentLap={this.currentLap}
           alertMsg={this.state.alertMsg}
+          brushColor={this.state.brushColor}
         />
         </div>
     );
