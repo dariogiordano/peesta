@@ -12,7 +12,7 @@ class Grid extends React.Component {
     this.gearMax=6
     this.cellSize=20
     this.trackColor="#303740"
-    this.trailColor="#ffffff"
+    this.trailColor="#fffff"
     this.bgColor="#11914d"
 
     this.trailLength=14
@@ -563,7 +563,8 @@ class Grid extends React.Component {
 
   componentDidMount() {
     this.setState(state=>({
-      dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize),Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
+     // dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize),Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
+      dimensions:[window.innerWidth,window.innerHeight]
     }))
   }
   componentDidUpdate() {

@@ -9,12 +9,12 @@ margin:10px;
 display:inline-block;
 border:3px solid white;
 transition-timing-function: ease-out;
-transition: border 500ms;
+transition: border 300ms;
 &.selected{border:3px solid tomato}
 &.selected:hover{border:3px solid tomato}
 &:hover{
     cursor: pointer;
-    border:3px solid #cccccc;
+    border:3px solid aqua;
 }
 `;
 

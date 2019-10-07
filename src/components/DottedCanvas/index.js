@@ -92,9 +92,9 @@ class DottedCanvas extends React.Component {
   getGrid(){
     return new Promise((resolve, reject) => {
       let grid=[];
-      for(var y=this.props.cellSize;y<=this.props.height-this.props.cellSize; y+=this.props.cellSize){
+      for(var y=this.props.cellSize;y<this.props.height; y+=this.props.cellSize){
         let row=[];
-        for(var x=this.props.cellSize;x<= this.props.width-this.props.cellSize;x+=this.props.cellSize){
+        for(var x=this.props.cellSize;x<this.props.width;x+=this.props.cellSize){
           let p = this.ctx.getImageData(x, y, 1, 1).data; 
           let hex = "#" + ("000000" + this.rgbToHex(p[0], p[1], p[2])).slice(-6);
           row.push(hex!==this.props.bgColor?1:0);
@@ -164,8 +164,8 @@ class DottedCanvas extends React.Component {
       setTimeout(function(){
         let gridPromise=this.getGrid();
         gridPromise.then(function(result){
-          for(var w=this.props.cellSize;w<=this.props.width-this.props.cellSize; w+=this.props.cellSize){
-            for(var h=this.props.cellSize;h<= this.props.height-this.props.cellSize;h+=this.props.cellSize){
+          for(var w=this.props.cellSize;w<this.props.width; w+=this.props.cellSize){
+            for(var h=this.props.cellSize;h<this.props.height;h+=this.props.cellSize){
               this.ctx.fillStyle = "#f0f0f0";
               this.ctx.fillRect(w,h,1,1);
             }
