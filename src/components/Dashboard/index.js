@@ -8,16 +8,15 @@ class Dashboard extends React.Component {
     super(props);
     this.buttonClick=this.buttonClick.bind(this);
     this.changeColor=this.changeColor.bind(this);
-    this.changeCursor=this.changeCursor.bind(this);
+    this.changeSize=this.changeSize.bind(this);
     this.state={overClass:""};
   }
 
+  changeSize(size){
+    this.props.onChangeSize(size);
+  }
   changeColor(color){
     this.props.onChangeColor(color);
-  }
-
-  changeCursor(size){
-    this.props.onChangeCursor(size);
   }
 
   static getDerivedStateFromProps(props,state){
@@ -39,7 +38,7 @@ class Dashboard extends React.Component {
           <div>
             <ColorButton onButtonClick={this.changeColor} brushColor={this.props.brushColor} color={this.props.trackColor} />
             <ColorButton onButtonClick={this.changeColor} brushColor={this.props.brushColor} color={this.props.bgColor} />
-            <Slider></Slider>
+            <Slider cellSize={this.props.cellSize} brushSize={this.props.brushSize} onChange={this.changeSize}></Slider>
           </div>
         }
         

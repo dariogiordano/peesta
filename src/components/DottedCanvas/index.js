@@ -3,8 +3,8 @@ import StyledCanvas from "./styled";
 class DottedCanvas extends React.Component {
   constructor(props) {
     super(props);
-    this.mouse = {x: 0, y: 0};
-    this.last_mouse = {x: 0, y: 0};
+    this.mouse = {};
+    this.last_mouse = {};
     this.canvasRef = React.createRef();
     this.handleMouseDown=this.handleMouseDown.bind(this);
     this.handleMouseUp=this.handleMouseUp.bind(this);
@@ -14,26 +14,46 @@ class DottedCanvas extends React.Component {
     this.recursiveCleanGrid=this.recursiveCleanGrid.bind(this);
     this.down=false;
   }
-  handleMouseDown(){
-    this.down=true;
+  handleMouseDown(e){
+
+    if(this.props.gameStage===1){
+      this.mouse.x = e.pageX;
+      this.mouse.y = e.pageY;
+      
+      if(!e.shiftKey || this.mouse.x===undefined){
+       
+        this.last_mouse.x = this.mouse.x;
+        this.last_mouse.y = this.mouse.y;
+
+      
+      } 
+      if(!e.shiftKey){
+        this.down=true;
+      }
+      this.onPaint(e);
+    }
   }
-  handleMouseUp(){ 
+  handleMouseUp(){
+    this.last_mouse.x = this.mouse.x;
+    this.last_mouse.y = this.mouse.y;
     this.down=false;
   }
 
   handleMouseMove(e){
     if(this.props.gameStage===1){
-      this.last_mouse.x = this.mouse.x;
-      this.last_mouse.y = this.mouse.y;
-      this.mouse.x = e.pageX;
-      this.mouse.y = e.pageY;
+      if(!e.shiftKey && this.down){
+        this.last_mouse.x = this.mouse.x;
+        this.last_mouse.y = this.mouse.y;
+        this.mouse.x = e.pageX;
+        this.mouse.y = e.pageY;
+      }
       if(this.down)
-      this.onPaint(e);
+      this.onPaint(e.shiftKey);
     }
   }
 
-  onPaint(){
-    this.ctx.beginPath(this.mouse.x);
+  onPaint(e){
+    this.ctx.beginPath(this.mouse.x, this.mouse.y);
     this.ctx.moveTo(this.last_mouse.x, this.last_mouse.y);
     this.ctx.lineTo(this.mouse.x, this.mouse.y);
     this.ctx.closePath();
@@ -140,8 +160,7 @@ class DottedCanvas extends React.Component {
   componentDidMount(){
     this.canvas = this.canvasRef.current;
     this.ctx = this.canvas.getContext('2d');
-    this.mouse = {x: 0, y: 0};
-    this.last_mouse = {x: 0, y: 0};
+   
     
   }
 
@@ -154,7 +173,7 @@ class DottedCanvas extends React.Component {
     }
     if(this.props.gameStage===1){
       console.log(this.props.brushColor)
-      this.ctx.lineWidth = this.props.cellSize*3;
+      this.ctx.lineWidth = this.props.brushSize;
       this.ctx.lineJoin = "round";
       this.ctx.lineCap = "round";
       this.ctx.strokeStyle = this.props.brushColor;
@@ -179,7 +198,7 @@ class DottedCanvas extends React.Component {
 
   render() {
     return (
-      <StyledCanvas cursorSize={this.props.cellSize*3}>
+      <StyledCanvas cursorSize={this.props.brushSize}>
         <canvas ref={this.canvasRef} onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp} onMouseMove={this.handleMouseMove} width={this.props.width} height={this.props.height} >
           Your browser does not support the canvas element.
         </canvas>

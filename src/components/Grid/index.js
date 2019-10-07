@@ -30,7 +30,8 @@ class Grid extends React.Component {
       gameStage:0,
       gear:0,
       alertMsg:"",
-      brushColor:this.trackColor
+      brushColor:this.trackColor,
+      brushSize:this.cellSize*3,
     };
    
     this.lastPoint=[];
@@ -41,7 +42,8 @@ class Grid extends React.Component {
     this.handleMove = this.handleMove.bind(this);
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
-    this.onChangeColor=this.onChangeColor.bind(this)
+    this.onChangeColor=this.onChangeColor.bind(this);
+    this.onChangeSize=this.onChangeSize.bind(this)
   }
 
   checkCutFinishLine(x,y,direction,gear){
@@ -469,6 +471,12 @@ class Grid extends React.Component {
       brushColor:color
     }));
   }
+  onChangeSize(size){
+    console.log(size);
+    this.setState(state=>({
+      brushSize:size
+    }));
+  }
  
   handleMove(event){
     const x =Math.floor((event.clientX+(this.cellSize/2))/this.cellSize)*this.cellSize;
@@ -632,6 +640,7 @@ class Grid extends React.Component {
             height={this.state.dimensions[1]}
             onGridSet={this.onGridSet}
             brushColor={this.state.brushColor}
+            brushSize={this.state.brushSize}
           />
           {this.state.gameStage>1 &&
             <DrawBoardSvg viewBox={"0 0 "+ this.state.dimensions[0] +" "+ this.state.dimensions[1]}>
@@ -651,11 +660,13 @@ class Grid extends React.Component {
         cellSize={this.cellSize}
         onChangeGameStage={this.onChangeGameStage}
         onChangeColor={this.onChangeColor}
+        onChangeSize={this.onChangeSize}
         gear={this.state.gear}
         raceLaps={this.state.raceLaps}
         currentLap={this.currentLap}
         alertMsg={this.state.alertMsg}
         brushColor={this.state.brushColor}
+        brushSize={this.state.brushSize}
       />
       </StyledGrid>
     );
