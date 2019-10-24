@@ -15,6 +15,7 @@ function App() {
     <div>
       <GlobalStyle />
       <Route path="/" exact component={Home} />
+      <Route path="/:roomName" exact component={Home} />
     </div>
   </Router>
   );

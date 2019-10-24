@@ -112,6 +112,7 @@ class DottedCanvas extends React.Component {
   getGrid(){
     return new Promise((resolve, reject) => {
       let grid=[];
+      let trackImage=this.canvas.toDataURL();
       for(var y=this.props.cellSize;y<this.props.height; y+=this.props.cellSize){
         let row=[];
         for(var x=this.props.cellSize;x<this.props.width;x+=this.props.cellSize){
@@ -153,7 +154,7 @@ class DottedCanvas extends React.Component {
       //elimino eventuali 2 lasciati nei sottosquadra fuori dalla pista nel passaggio precedente
       
       grid=this.recursiveCleanGrid(grid);
-      resolve(grid)
+      resolve({grid,trackImage})
     });
   }
 

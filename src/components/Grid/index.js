@@ -32,6 +32,9 @@ class Grid extends React.Component {
       alertMsg:"",
       brushColor:this.trackColor,
       brushSize:this.cellSize*3,
+      actualPlayer:null,
+      myPlayer:null,
+      roomName:this.props.roomName,
     };
    
     this.lastPoint=[];
@@ -43,7 +46,62 @@ class Grid extends React.Component {
     this.onChangeGameStage=this.onChangeGameStage.bind(this);
     this.onGridSet=this.onGridSet.bind(this);
     this.onChangeColor=this.onChangeColor.bind(this);
-    this.onChangeSize=this.onChangeSize.bind(this)
+    this.onChangeSize=this.onChangeSize.bind(this);
+    this.onUnload = this.onUnload.bind(this);
+    /*SOCKET.IO*/
+        //this.socket = socketIOClient("http://localhost:3001");
+       /* this.socket = socketIOClient("https://forza5.herokuapp.com/");
+        
+        this.socket.on("set my player", newRoomName => {
+          console.log(newRoomName);
+          if(newRoomName)
+          this.setState(state => ({
+            roomName: newRoomName
+          }));
+        });
+    
+        this.socket.on("left alone", () => {
+          this.props.history.push(`/quitted/`);
+        });
+    
+        this.socket.on("connection lost", () => {
+          this.setState(state => ({
+            standby: true
+          })); 
+        });
+    
+        this.socket.on("connection recovered", () => {
+          this.setState(state => ({
+            standby: false
+          }));
+        });
+    
+        this.socket.on('reconnect', (attemptNumber) => {
+          this.socket.emit("user reconnected", this.state.roomName,this.state.myPlayer);
+        });*/
+    
+        /*
+        "Update" si verifica ogni volta che uno dei due giocatori effettua una mossa,
+        subito dopo la mia mossa anche io ricevo l'update
+        */
+        /*this.socket.on("update", (newState, vIndex, hIndex) => {
+          //se il mio status è in WON vuol dire che ho vinsto en on accetto più cambiamenti, almento che
+          //il nuovo stato in arrivo non sia "New game", il che vuol dire che il mio avversario ha chiesto un'altra partita
+          if (this.state.matchStatus !== "won" || newState.matchStatus==="new game") {
+            //vIndex, hIndex e la posizione della casella riempita dall'avversario la mossa precedente.
+            if(vIndex && hIndex) this.highlightCohordinates=[vIndex,hIndex];
+            else this.highlightCohordinates=[];
+            this.setState(state => ({
+              grid: newState.grid,
+              actualPlayer: newState.actualPlayer,
+              matchStatus: newState.matchStatus
+            }));
+          }
+        });*/
+
+  }
+  onUnload(){
+  //  this.socket.emit("player will unregister");
   }
 
   checkCutFinishLine(x,y,direction,gear){
@@ -455,24 +513,22 @@ class Grid extends React.Component {
     }));
   }
 
-  onGridSet(grid){
+  onGridSet(trackData){
     this.setState(state=>({
       loading:false,
       gameStage:3,
-      grid,
+      grid:trackData.grid,
       isMoving:false,
       alertMsg:""
     }));
   }
 
   onChangeColor(color){
-    console.log(color);
     this.setState(state=>({
       brushColor:color
     }));
   }
   onChangeSize(size){
-    console.log(size);
     this.setState(state=>({
       brushSize:size
     }));
@@ -566,10 +622,30 @@ class Grid extends React.Component {
           }));
         }  
       }
-    }
+    } 
   }
 
   componentDidMount() {
+    window.addEventListener("beforeunload", this.onUnload);
+    console.log("roomName: ",this.state.roomName)
+    /*if(this.props.roomName){
+      this.socket.emit("register player", [
+        window.innerWidth,
+        window.innerHeight
+      ],this.props.roomName,"O");
+
+      this.setState(state => ({
+        myPlayer:"O"
+      }));
+    }else{
+      this.socket.emit("register player", [
+        window.innerWidth,
+        window.innerHeight
+      ],null,"X");
+      this.setState(state => ({
+        myPlayer:"X"
+      }));
+    }*/
     this.setState(state=>({
      // dimensions:[(Math.floor((window.innerWidth)/this.cellSize)*this.cellSize),Math.floor((window.innerHeight)/this.cellSize)*this.cellSize]
       dimensions:[window.innerWidth,window.innerHeight]
@@ -580,6 +656,10 @@ class Grid extends React.Component {
     this.setState(state=>({
       gameStage:1
     }))
+  }
+  componentWillUnmount() {
+    window.removeEventListener("beforeunload", this.onUnload)
+    this.socket.emit("player will unregister");
   }
 
   render() {

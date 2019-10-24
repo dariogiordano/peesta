@@ -3,13 +3,13 @@ import Grid from "components/Grid"
 import { Helmet } from "react-helmet";
 
 
-const Home = () => {
+const Home = (props) => {
   return (
     <div>
       <Helmet>
         <title>Home</title>
       </Helmet>
-     <Grid></Grid>
+     <Grid history={props.history} roomName={props.match.params.roomName}></Grid>
     </div>
   );
 };
